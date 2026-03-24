@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Star Electric | Commercial Electricians in Regina, SK</title>
+  <meta name="description" content="Star Electric is Regina's trusted commercial electrical contractor. Licensed electricians serving businesses across Saskatchewan — commercial construction, lighting, and Gemstone installations." />
+  <link rel="stylesheet" href="style.css" />
+  <!-- EmailJS — sends form submissions directly to your inbox, no server needed -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <!-- Favicon placeholder — drop a favicon.ico in this folder -->
+</head>
+<body>
+
+<!-- ─────────────────────── HEADER ─────────────────────── -->
+<header id="header">
+  <div class="container">
+    <nav class="nav-inner">
+
+      <a href="#" class="nav-logo">
+        <span class="logo-wrap"><img src="assets/logo.png" alt="Star Electric Logo" /></span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#why">Why Us</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li class="nav-phone-item">
+          <a class="nav-phone" href="tel:3065840550">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.45 15.45 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24 11.47 11.47 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.47 11.47 0 0 0 .57 3.6 1 1 0 0 1-.25 1.02l-2.2 2.17z"/></svg>
+            (306) 584-0550
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-cta">
+        <a href="#contact" class="btn btn-primary nav-cta-btn">Get a Free Quote</a>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+
+    </nav>
+  </div>
+</header>
+
+<!-- ─────────────────────── HERO ─────────────────────── -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-inner">
+
+      <div class="hero-content">
+        <div class="hero-eyebrow">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Regina &amp; Area, Saskatchewan
+        </div>
+        <h1 class="hero-title">
+          Trusted <span class="accent">Electrical</span><br/>
+          Services You<br/>
+          Can Count On
+        </h1>
+        <p class="hero-subtitle">
+          From panel upgrades to full commercial buildouts, Star Electric delivers safe, reliable, code-compliant electrical work throughout Regina and surrounding areas.
+        </p>
+        <div class="hero-actions">
+          <a href="#contact" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.45 15.45 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24 11.47 11.47 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.47 11.47 0 0 0 .57 3.6 1 1 0 0 1-.25 1.02l-2.2 2.17z"/></svg>
+            Get a Free Quote
+          </a>
+          <a href="#services" class="btn btn-outline">View Services</a>
+        </div>
+        <div class="hero-badges">
+          <div class="hero-badge"><span class="dot"></span> Licensed &amp; Insured</div>
+          <div class="hero-badge"><span class="dot"></span> Commercial</div>
+          <div class="hero-badge"><span class="dot"></span> Regina &amp; Area</div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="hero-card">
+          <span class="logo-wrap"><img src="assets/logo.png" alt="Star Electric" /></span>
+          <p class="hero-card-tagline">Regina's Electrical Professionals</p>
+          <div class="hero-card-contact">
+            <a href="tel:3065840550" class="call-link">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.45 15.45 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24 11.47 11.47 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.47 11.47 0 0 0 .57 3.6 1 1 0 0 1-.25 1.02l-2.2 2.17z"/></svg>
+              (306) 584-0550
+            </a>
+            <a href="mailto:admin@starelectric.ca" class="email-link">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+              admin@starelectric.ca
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────── TRUST BAR ─────────────────────── -->
+<div id="trust-bar">
+  <div class="container">
+    <div class="trust-inner">
+      <div class="trust-item">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        Licensed Electricians
+      </div>
+      <div class="trust-item">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        Fully Insured
+      </div>
+      <div class="trust-item">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        Serving Regina &amp; Area
+      </div>
+      <div class="trust-item">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20h9V4H3v16h9zm0 2H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h18a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-9zm-1-9H7v-2h4v2zm6 0h-4v-2h4v2zm-6 4H7v-2h4v2zm6 0h-4v-2h4v2z"/></svg>
+        Commercial
+      </div>
+      <div class="trust-item">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Code-Compliant Work
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────── SERVICES ─────────────────────── -->
+<section id="services">
+  <div class="container">
+    <div class="services-header">
+      <span class="section-label">What We Do</span>
+      <h2 class="section-title">Electrical Services<br/> <span>Regina &amp; Area</span></h2>
+    </div>
+    <div class="services-grid">
+
+      <div class="service-card">
+        <div class="service-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+        </div>
+        <h3>Commercial Electrical</h3>
+        <p>Full-service electrical for Commercial Construction, Retail Spaces, Reno's and new construction builds across Saskatchewan.</p>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0-5a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0V3a1 1 0 0 1 1-1zm0 18a1 1 0 0 1-1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1-1 1zm8.66-13.5-.87.5a1 1 0 1 1-1-1.73l.87-.5a1 1 0 1 1 1 1.73zM4.21 17.5l.87-.5a1 1 0 1 1 1 1.73l-.87.5a1 1 0 1 1-1-1.73zM21 12a1 1 0 0 1-1 1h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 1 1zM4 12a1 1 0 0 1-1 1H2a1 1 0 0 1 0-2h1a1 1 0 0 1 1 1zm15.66 4.5a1 1 0 0 1-1.37.36l-.87-.5a1 1 0 1 1 1-1.73l.87.5a1 1 0 0 1 .37 1.37zM5.21 7.14l-.87-.5a1 1 0 1 1 1-1.73l.87.5a1 1 0 1 1-1 1.73z"/></svg>
+        </div>
+        <h3>Lighting Installation</h3>
+        <p>Interior, exterior, and commercial lighting — including LED retrofits and smart lighting systems.</p>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3>Gemstone Installations</h3>
+        <p>Permanent architectural lighting with millions of colour combinations — transform your commercial space or building year-round.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────── WHY CHOOSE US ─────────────────────── -->
+<section id="why">
+  <div class="container">
+    <div class="why-inner">
+
+      <div class="why-content">
+        <span class="section-label">Why Star Electric</span>
+        <h2 class="section-title">The Right Team<br/>for the Job</h2>
+        <p class="why-intro">
+          We bring experience, professionalism, and a commitment to quality that Regina &amp; Area businesses trust. Every job — big or small — gets our full attention.
+        </p>
+        <div class="why-list">
+          <div class="why-item">
+            <div class="why-check">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <div class="why-item-body">
+              <h4>Licensed &amp; Fully Insured</h4>
+              <p>All work is performed by licensed journeyman electricians, fully insured for your peace of mind.</p>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-check">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <div class="why-item-body">
+              <h4>Transparent Pricing</h4>
+              <p>We provide clear quotes upfront with no hidden fees. You know exactly what you're getting.</p>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-check">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <div class="why-item-body">
+              <h4>Code-Compliant Work</h4>
+              <p>Every installation meets or exceeds the Canadian Electrical Code and all Regina permit requirements.</p>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-check">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <div class="why-item-body">
+              <h4>Local Regina Business</h4>
+              <p>We're proud to be part of this community and committed to serving it for the long haul.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="why-stats">
+        <div class="stat-box">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Licensed &amp; Insured</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5v-2h2v2zm4 4H9v-2h2v2zm0-4H9v-2h2v2zm0-4H9V7h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2z"/></svg>
+          </div>
+          <div class="stat-label">Commercial Focus</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          </div>
+          <div class="stat-label">Saskatchewan Based</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          </div>
+          <div class="stat-label">Code Compliant Every Time</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────── ABOUT ─────────────────────── -->
+<section id="about">
+  <div class="container">
+    <div class="about-inner">
+
+      <div class="about-logo-block">
+        <span class="logo-wrap"><img src="assets/logo.png" alt="Star Electric" /></span>
+        <p>Your local electrical professionals<br/>in Regina &amp; Area</p>
+      </div>
+
+      <div class="about-content">
+        <span class="section-label">About Star Electric</span>
+        <h2 class="section-title">Regina's Electrical <span>Professionals</span></h2>
+        <p>
+          Star Electric is a Regina-based electrical contracting company serving property managers, developers, and businesses across Saskatchewan. We specialize in safe, quality electrical work — from tenant improvements to full commercial installations.
+        </p>
+        <p>
+          Our team of licensed journeyman electricians takes pride in every project. We communicate clearly, show up on time, and deliver work that lasts. Whether it's a new outlet, a panel upgrade, or a full buildout, Star Electric is the team to call.
+        </p>
+        <p>
+          Based in Regina, we understand the unique needs and requirements of Saskatchewan commercial properties — and we're committed to helping our community power their businesses safely.
+        </p>
+        <div class="about-actions">
+          <a href="#contact" class="btn btn-dark">
+            Contact Us Today
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────── CONTACT ─────────────────────── -->
+<section id="contact">
+  <div class="container">
+    <div class="contact-inner">
+
+      <div class="contact-content">
+        <span class="section-label">Get In Touch</span>
+        <h2 class="section-title">Ready to Get<br/>Started?</h2>
+        <p>
+          Call, email, or fill out the form and we'll get back to you with a free quote. No pressure, no obligation.
+        </p>
+        <div class="contact-methods">
+          <a href="tel:3065840550" class="contact-method">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.45 15.45 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24 11.47 11.47 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.47 11.47 0 0 0 .57 3.6 1 1 0 0 1-.25 1.02l-2.2 2.17z"/></svg>
+            (306) 584-0550
+          </a>
+          <a href="mailto:admin@starelectric.ca" class="contact-method">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            admin@starelectric.ca
+          </a>
+          <div class="contact-method" style="cursor:default;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            Regina &amp; Area, Saskatchewan
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-form-box">
+        <h3>Request a Free Quote</h3>
+        <div id="formSuccess" class="form-success" style="display:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F5C118" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+          <h4>Message Sent!</h4>
+          <p>Thanks! We'll get back to you with a free quote shortly.</p>
+        </div>
+
+        <form id="contactForm" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name *</label>
+              <input type="text" id="firstName" name="firstName" placeholder="John" required />
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name *</label>
+              <input type="text" id="lastName" name="lastName" placeholder="Smith" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone Number *</label>
+            <input type="tel" id="phone" name="phone" placeholder="(306) 555-0100" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="john@email.com" />
+          </div>
+          <div class="form-group">
+            <label for="service">Service Needed</label>
+            <select id="service" name="service">
+              <option value="">— Select a service —</option>
+              <option>Commercial Electrical</option>
+              <option>Gemstone Lighting</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Tell Us About Your Project</label>
+            <textarea id="message" name="message" placeholder="Brief description of the work needed..."></textarea>
+          </div>
+          <p id="formError" class="form-error" style="display:none;">
+            Something went wrong — please call us at (306) 584-0550 or email admin@starelectric.ca.
+          </p>
+          <button type="submit" class="btn btn-primary form-submit" id="submitBtn">
+            <svg class="btn-icon-send" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            <svg class="btn-icon-spin" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <span class="btn-label">Send My Request</span>
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────── FOOTER ─────────────────────── -->
+<footer id="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-wrap"><img src="assets/logo.png" alt="Star Electric" /></span>
+        <p>Star Electric is Regina's trusted electrical contractor — serving businesses across Saskatchewan with licensed, code-compliant work.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="#services">Commercial Electrical</a></li>
+          <li><a href="#services">Lighting Installation</a></li>
+          <li><a href="#services">Gemstone Installations</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="tel:3065840550">(306) 584-0550</a></li>
+          <li><a href="mailto:admin@starelectric.ca">admin@starelectric.ca</a></li>
+          <li><a href="#contact">Regina &amp; Area, Saskatchewan</a></li>
+          <li><a href="#contact">Get a Free Quote</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Star Electric. All rights reserved. Regina &amp; Area, SK.</span>
+      <span>Licensed Electrical Contractor &mdash; Saskatchewan</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const hamburger = document.getElementById('hamburger');
+  const navLinks  = document.getElementById('navLinks');
+  hamburger.addEventListener('click', () => { navLinks.classList.toggle('open'); });
+  navLinks.querySelectorAll('a').forEach(a => { a.addEventListener('click', () => navLinks.classList.remove('open')); });
+
+  const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+  const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
+  const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+  document.getElementById('contactForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const btn = document.getElementById('submitBtn');
+    const iconSend = btn.querySelector('.btn-icon-send');
+    const iconSpin = btn.querySelector('.btn-icon-spin');
+    const btnLabel = btn.querySelector('.btn-label');
+    const errorEl = document.getElementById('formError');
+    if (!form.firstName.value || !form.lastName.value || !form.phone.value) return;
+    btn.disabled = true;
+    iconSend.style.display = 'none';
+    iconSpin.style.display = 'inline';
+    btnLabel.textContent = 'Sending…';
+    errorEl.style.display = 'none';
+    const templateParams = {
+      from_name: `${form.firstName.value} ${form.lastName.value}`,
+      phone: form.phone.value,
+      reply_to: form.email.value || 'Not provided',
+      service: form.service.value || 'Not specified',
+      message: form.message.value || 'No message',
+    };
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+      form.style.display = 'none';
+      document.getElementById('formSuccess').style.display = 'flex';
+    } catch (err) {
+      console.error('EmailJS error:', err);
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      iconSend.style.display = 'inline';
+      iconSpin.style.display = 'none';
+      btnLabel.textContent = 'Send My Request';
+    }
+  });
+</script>
+</body>
+</html>
