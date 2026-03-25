@@ -164,10 +164,10 @@ body {
 }
 
 .nav-logo img {
-  height: 72px;
+  height: 82px;
   width: auto;
 }
-.nav-logo .logo-wrap::after { font-size: 20px; }
+.nav-logo .logo-wrap::after { font-size: 22px; }
 
 
 .nav-links {
