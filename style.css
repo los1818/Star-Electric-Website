@@ -131,10 +131,23 @@ body {
   line-height: 0;
 }
 
-/* Invert the PNG for dark backgrounds; hue-rotate restores yellow star colour */
+/* Invert the PNG so it shows white-on-dark on all dark backgrounds */
 .logo-wrap img {
-  filter: invert(1) hue-rotate(180deg) saturate(3) brightness(1.2);
+  filter: invert(1);
   display: block;
+}
+
+/* Yellow star overlay — sits precisely over the star in the logo image */
+.logo-wrap::after {
+  content: '★';
+  position: absolute;
+  color: #F5C118;
+  left: 66%;
+  top: 64%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+  pointer-events: none;
+  font-size: 14px;
 }
 
 
@@ -154,6 +167,7 @@ body {
   height: 72px;
   width: auto;
 }
+.nav-logo .logo-wrap::after { font-size: 12px; }
 
 
 .nav-links {
@@ -344,6 +358,7 @@ body {
   width: 180px;
   height: auto;
 }
+.hero-card .logo-wrap::after { font-size: 16px; }
 
 
 .hero-card-tagline {
@@ -643,6 +658,7 @@ body {
   width: 220px;
   height: auto;
 }
+.about-logo-block .logo-wrap::after { font-size: 20px; }
 
 
 .about-logo-block p {
@@ -864,6 +880,7 @@ body {
   height: 48px;
   width: auto;
 }
+.footer-brand .logo-wrap::after { font-size: 8px; }
 
 
 .footer-brand p {
