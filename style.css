@@ -25,11 +25,11 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 200px;
+  scroll-padding-top: 88px;
 }
 
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
   color: var(--black);
   line-height: 1.6;
   background: var(--white);
@@ -121,7 +121,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 200px;
+  height: 88px;
 }
 
 /* ── Logo wrapper — used on every logo instance ── */
@@ -151,7 +151,7 @@ body {
 }
 
 .nav-logo img {
-  height: 190px;
+  height: 72px;
   width: auto;
 }
 
@@ -427,11 +427,13 @@ body {
 }
 
 .service-card {
-  background: var(--gray-light);
+  background: var(--white);
   border-radius: 12px;
   padding: 36px 28px;
   transition: var(--transition);
   border: 2px solid transparent;
+  border-left: 4px solid var(--yellow);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
   position: relative;
   overflow: hidden;
 }
@@ -612,7 +614,7 @@ body {
 /* ── About ── */
 #about {
   padding: 96px 0;
-  background: var(--gray-light);
+  background: var(--white);
 }
 
 .about-inner {
@@ -719,6 +721,7 @@ body {
 .contact-method:hover {
   background: var(--black);
   color: var(--yellow);
+  transform: translateX(4px);
 }
 
 .contact-method svg {
@@ -936,7 +939,7 @@ body {
   .nav-links {
     display: none;
     position: absolute;
-    top: 200px;
+    top: 88px;
     left: 0;
     right: 0;
     background: var(--black);
