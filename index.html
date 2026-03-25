@@ -420,7 +420,8 @@
     const templateParams = {
       from_name: `${form.firstName.value} ${form.lastName.value}`,
       phone: form.phone.value,
-      reply_to: form.email.value || 'Not provided',
+      customer_email: form.email.value || 'Not provided',
+      reply_to: form.email.value || 'admin@starelectric.ca',
       service: form.service.value || 'Not specified',
       message: form.message.value || 'No message',
     };
