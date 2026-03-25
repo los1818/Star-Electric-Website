@@ -133,7 +133,7 @@ body {
 
 /* Invert the PNG for dark backgrounds; hue-rotate restores yellow star colour */
 .logo-wrap img {
-  filter: invert(1) hue-rotate(180deg);
+  filter: invert(1) hue-rotate(180deg) saturate(3) brightness(1.2);
   display: block;
 }
 
