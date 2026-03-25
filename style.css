@@ -131,9 +131,9 @@ body {
   line-height: 0;
 }
 
-/* Invert the real PNG (black-on-white → white-on-black) */
+/* Invert the PNG for dark backgrounds; hue-rotate restores yellow star colour */
 .logo-wrap img {
-  filter: invert(1);
+  filter: invert(1) hue-rotate(180deg);
   display: block;
 }
 
