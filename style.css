@@ -167,7 +167,7 @@ body {
   height: 72px;
   width: auto;
 }
-.nav-logo .logo-wrap::after { font-size: 12px; }
+.nav-logo .logo-wrap::after { font-size: 20px; }
 
 
 .nav-links {
@@ -358,7 +358,7 @@ body {
   width: 180px;
   height: auto;
 }
-.hero-card .logo-wrap::after { font-size: 16px; }
+.hero-card .logo-wrap::after { font-size: 26px; }
 
 
 .hero-card-tagline {
@@ -658,7 +658,7 @@ body {
   width: 220px;
   height: auto;
 }
-.about-logo-block .logo-wrap::after { font-size: 20px; }
+.about-logo-block .logo-wrap::after { font-size: 32px; }
 
 
 .about-logo-block p {
@@ -880,7 +880,7 @@ body {
   height: 48px;
   width: auto;
 }
-.footer-brand .logo-wrap::after { font-size: 8px; }
+.footer-brand .logo-wrap::after { font-size: 14px; }
 
 
 .footer-brand p {
