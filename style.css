@@ -874,6 +874,7 @@ body {
 
 .footer-brand .logo-wrap {
   margin-bottom: 16px;
+  display: inline-block;
 }
 
 .footer-brand img {
