@@ -433,6 +433,7 @@
     };
     try {
       await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+      await emailjs.send(EMAILJS_SERVICE_ID, 'template_muvw0dp', templateParams);
       form.style.display = 'none';
       document.getElementById('formSuccess').style.display = 'flex';
     } catch (err) {
