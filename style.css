@@ -493,6 +493,15 @@ body {
   color: var(--black);
 }
 
+.gemstone-badge {
+  width: 150px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: block;
+}
+
 .service-card h3 {
   font-size: 1.15rem;
   font-weight: 800;
