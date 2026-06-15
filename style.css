@@ -294,6 +294,39 @@ body {
   color: var(--yellow);
 }
 
+/* ── Catchy slogan ── */
+.hero-slogan {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  color: var(--yellow);
+  margin: -6px 0 24px;
+  text-shadow: 0 0 14px rgba(245,193,24,0.45);
+}
+.hero-slogan .flicker {
+  animation: slogan-flicker 4.5s infinite steps(1);
+}
+.hero-slogan-bolt {
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(245,193,24,0.6));
+}
+@keyframes slogan-flicker {
+  0%, 100%      { opacity: 1; text-shadow: 0 0 16px rgba(245,193,24,0.65); }
+  41%, 43%      { opacity: 1; }
+  42%           { opacity: 0.35; text-shadow: none; }
+  62%, 64%      { opacity: 1; }
+  63%           { opacity: 0.55; text-shadow: none; }
+  92%, 94%      { opacity: 1; }
+  93%           { opacity: 0.4; text-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-slogan .flicker { animation: none; }
+}
+
 .hero-subtitle {
   font-size: 1.1rem;
   color: rgba(255,255,255,0.7);
