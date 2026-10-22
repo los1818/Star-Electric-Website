@@ -1,0 +1,17 @@
+{
+  "dbo.Customer": {
+    "primaryKey": ["CustomerID"],
+    "rows": [
+      { "CustomerID": 1, "Name": "Example Customer A", "Address1": "100 Albert St", "City": "Regina", "Phone": "(306) 555-0100" },
+      { "CustomerID": 2, "Name": "Example Customer B", "Address1": "250 Broad St", "City": "Regina", "Phone": null },
+      { "CustomerID": 2, "Name": "Duplicate key row", "Address1": "", "City": "Regina", "Phone": null }
+    ]
+  },
+  "dbo.Job": {
+    "primaryKey": ["JobNo"],
+    "rows": [
+      { "JobNo": "J-1001", "CustomerID": 1, "Description": "Example T&M job", "Status": "Closed" },
+      { "JobNo": null, "CustomerID": 2, "Description": "Row with missing key", "Status": "Open" }
+    ]
+  }
+}
