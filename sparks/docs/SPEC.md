@@ -1,6 +1,6 @@
 # Sparks — Specification
 
-**Status: DRAFT v0.3, written by Claude because no SPEC.md was supplied.**
+**Status: DRAFT v0.4, written by Claude because no SPEC.md was supplied.**
 It is modelled on ServiceBox and adjusted for commercial electrical contracting. Anything marked
 **[ASSUMPTION]** needs confirmation from Star Electric before the phase that depends on it.
 
@@ -94,7 +94,10 @@ All tables have `id` (cuid), `createdAt`, `updatedAt`. Money in integer cents, r
 - `Invoice` + `InvoiceLine`: number, customer, job site, work order(s), status, dates, terms, lines, totals, amount paid; credit notes point at the invoice they credit
 - `InvoiceTax`: per-component tax breakdown, frozen when the invoice is posted
 - `Payment`: invoice, date, amount, method, reference
-- `InventoryItem`: SKU, description, category, UoM, cost, sell price, reorder point, active
+- `InventoryItem`: SKU, description, category, UoM, reorder point, active, and **Trimble Accubid pricing**:
+  price unit (E = each, C = per 100, M = per 1000), trade price, supplier discount, net cost, sell price,
+  price date, estimating labour hours per labour unit, and a "no labour" flag. Quote, invoice, PO and
+  material lines carry the price unit too, so `line amount = qty × price ÷ (1, 100 or 1000)`.
 - `InventoryLocation`: warehouse or truck (linked to employee)
 - `StockLevel`: item × location quantity
 - `PurchaseOrder` + `PurchaseOrderLine`: vendor, status, work order (optional), lines, received qty
@@ -120,6 +123,12 @@ status, mapped entity/id). Generic because the Trimble table list isn't known ye
   Tax per component is computed on the sum of the lines that carry that component.
 - A document discount reduces each component's taxable base in proportion to that base's share of the subtotal.
 - Discounts: percentage or fixed, applied before tax.
+
+### Inventory (modelled on Trimble Accubid)
+- Prices are per E/C/M exactly as in Trimble (e.g. conduit per 100 ft, screws per 1000).
+- The warehouse inventory is loaded from the Accubid export with `npm run inventory:import`
+  (see `scripts/import-accubid-inventory/README.md`). Real inventory files are never committed.
+- Sell price for materials: **[OPEN: markup rule? e.g. cost + X%, or per-category markup]**
 
 ### Numbering
 - WO-000001, Q-000001, INV-000001, PO-000001, from the `Sequence` table, assigned inside a
@@ -169,4 +178,5 @@ Cancelled from any open state. Allowed transitions are stored with the status ta
 | 2026-10-22 | SSO for any @starelectric.ca account; new users wait as PENDING until an admin assigns a role (replaces "pre-created users only"). |
 | 2026-10-22 | Technicians see customer contact info on assigned WOs but never prices (`pricing:view`). |
 | 2026-10-22 | ServiceBox CSV import moves into Phase 1. |
+| 2026-10-22 | Inventory and material pricing modelled on Trimble Accubid (E/C/M price units, trade price, discount, labour units). |
 | 2026-10-22 | App renamed from "Star FieldOps" to **Sparks**; folder `fieldops/` → `sparks/`. |

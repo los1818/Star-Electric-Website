@@ -7,6 +7,7 @@ import {
   formatCents,
   formatHours,
   lineAmountCents,
+  netCostCents,
   parseCents,
   parseQuantityMilli,
   type TaxComponentRate,
@@ -59,6 +60,35 @@ describe("lineAmountCents", () => {
   });
   it("rejects non-integer cents", () => {
     expect(() => lineAmountCents("1", 1.5)).toThrow(RangeError);
+  });
+});
+
+describe("Trimble price units (E / C / M)", () => {
+  it("prices per each by default", () => {
+    expect(lineAmountCents("4", 1065)).toBe(lineAmountCents("4", 1065, "E"));
+  });
+  it("divides by 100 for per-C prices", () => {
+    expect(lineAmountCents("250", 5800, "C")).toBe(14500); // 250 ft @ $58.00/C
+    expect(lineAmountCents("7", 4300, "C")).toBe(301); // 7 connectors @ $43.00/C = $3.01
+  });
+  it("divides by 1000 for per-M prices", () => {
+    expect(lineAmountCents("1500", 9500, "M")).toBe(14250); // 1500 screws @ $95.00/M
+    expect(lineAmountCents("3", 1250, "M")).toBe(4); // 3.75¢ → 4¢
+  });
+  it("handles fractional quantities with C pricing", () => {
+    expect(lineAmountCents("12.5", 19100, "C")).toBe(2388); // 12.5 ft @ $191/C = $23.875 → $23.88
+  });
+});
+
+describe("netCostCents", () => {
+  it("applies a supplier discount to the trade price", () => {
+    expect(netCostCents(10000, 0)).toBe(10000);
+    expect(netCostCents(10000, 3500)).toBe(6500);
+    expect(netCostCents(1999, 1000)).toBe(1799); // 199.9 discount → 200
+  });
+  it("rejects impossible discounts", () => {
+    expect(() => netCostCents(100, -1)).toThrow(RangeError);
+    expect(() => netCostCents(100, 10001)).toThrow(RangeError);
   });
 });
 

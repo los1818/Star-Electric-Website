@@ -9,6 +9,11 @@
 
 export type DiscountType = "NONE" | "PERCENT" | "AMOUNT";
 
+/** Trimble/Accubid price unit: the price is per 1 (E), 100 (C) or 1000 (M). */
+export type PriceUnit = "E" | "C" | "M";
+
+export const PRICE_UNIT_QUANTITY: Record<PriceUnit, number> = { E: 1, C: 100, M: 1000 };
+
 export interface TaxComponentRate {
   code: string;
   label: string;
@@ -77,11 +82,21 @@ export function parseQuantityMilli(quantity: string | number): bigint {
   return sign ? -milli : milli;
 }
 
-/** Line amount = quantity × unit price, rounded half-up to the cent. */
-export function lineAmountCents(quantity: string | number, unitPriceCents: number): number {
+/**
+ * Line amount = quantity × price ÷ price-unit quantity, rounded half-up to the cent.
+ * e.g. 250 ft of wire at $58.00 per C → 250 × 5800 / 100 = 14500¢.
+ */
+export function lineAmountCents(quantity: string | number, unitPriceCents: number, priceUnit: PriceUnit = "E"): number {
   assertInt(unitPriceCents, "unitPriceCents");
   const milli = parseQuantityMilli(quantity);
-  return toSafeNumber(divRoundHalfUp(milli * BigInt(unitPriceCents), 1000n));
+  const per = BigInt(PRICE_UNIT_QUANTITY[priceUnit]);
+  return toSafeNumber(divRoundHalfUp(milli * BigInt(unitPriceCents), 1000n * per));
+}
+
+/** Net cost = trade price less a basis-point discount, rounded half-up. */
+export function netCostCents(tradePriceCents: number, discountBp: number): number {
+  if (discountBp < 0 || discountBp > 10_000) throw new RangeError("Discount must be 0–100%");
+  return tradePriceCents - applyRateBp(tradePriceCents, discountBp);
 }
 
 /** amount × rate (basis points), rounded half-up to the cent. */

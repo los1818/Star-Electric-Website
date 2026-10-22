@@ -8,3 +8,9 @@ coverage/
 playwright-report/
 test-results/
 scripts/migrate-trimble/reports/
+
+# Business data: never commit real inventory/price files or import reports
+*.xlsx
+*.xls
+*.csv
+scripts/*/reports/
