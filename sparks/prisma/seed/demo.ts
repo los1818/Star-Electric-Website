@@ -1,5 +1,5 @@
 import { Prisma, type InventoryItem, type PrismaClient, type Role } from "@prisma/client";
-import { computeTotals, lineAmountCents, type TaxComponentRate } from "../../src/lib/money";
+import { computeTotals, lineAmountCents, markupPriceCents, type TaxComponentRate } from "../../src/lib/money";
 
 // Fake demo data for development. Every business name is invented; addresses use real
 // Regina street names with made-up numbers; phone numbers are in the fictional 555-01xx range.
@@ -82,58 +82,58 @@ const USERS: { email: string; name: string; role: Role; employeeIndex?: number }
   { email: "new.hire@star-electric.example", name: "Nolan Newhire", role: "PENDING" },
 ];
 
-// [sku, description, category, unit, cost cents, price cents]
-const INVENTORY: [string, string, string, string, number, number][] = [
-  ["W-12-2-NMD", "12/2 NMD90 copper cable", "WIRE", "FT", 62, 115],
-  ["W-14-2-NMD", "14/2 NMD90 copper cable", "WIRE", "FT", 45, 89],
-  ["W-10-3-AC90", "10/3 AC90 armoured cable", "WIRE", "FT", 185, 325],
-  ["W-12-2-AC90", "12/2 AC90 armoured cable", "WIRE", "FT", 98, 175],
-  ["W-6-RW90-BK", "#6 RW90 copper, black", "WIRE", "FT", 165, 290],
-  ["W-12-T90-BK", "#12 T90 stranded, black", "WIRE", "FT", 21, 42],
-  ["W-12-T90-WH", "#12 T90 stranded, white", "WIRE", "FT", 21, 42],
-  ["W-12-T90-GN", "#12 T90 stranded, green", "WIRE", "FT", 21, 42],
-  ["W-TECK-3C10", "3C #10 TECK90 cable", "WIRE", "M", 720, 1250],
-  ["C-EMT-075", "3/4\" EMT conduit, 10 ft", "CONDUIT", "EA", 1150, 1995],
-  ["C-EMT-050", "1/2\" EMT conduit, 10 ft", "CONDUIT", "EA", 780, 1395],
-  ["C-EMT-100", "1\" EMT conduit, 10 ft", "CONDUIT", "EA", 1890, 3250],
-  ["C-PVC-100", "1\" rigid PVC conduit, 10 ft", "CONDUIT", "EA", 1240, 2150],
-  ["C-EMTC-075", "3/4\" EMT set-screw connector", "CONDUIT", "EA", 95, 195],
-  ["C-EMTK-075", "3/4\" EMT set-screw coupling", "CONDUIT", "EA", 88, 180],
-  ["C-LT-050", "1/2\" liquid-tight flex, per ft", "CONDUIT", "FT", 145, 265],
-  ["B-4SQ-D", "4\" square box, 2-1/8\" deep", "BOXES", "EA", 310, 595],
-  ["B-1110", "1110 device box", "BOXES", "EA", 245, 465],
-  ["B-PLR-1G", "1-gang plaster ring", "BOXES", "EA", 135, 260],
-  ["B-JB-6x6", "6x6x4 NEMA 1 junction box", "BOXES", "EA", 1450, 2595],
-  ["B-WP-1G", "1-gang weatherproof in-use cover", "BOXES", "EA", 1120, 2095],
-  ["D-REC-15", "15A 5-15R decorator receptacle, white", "DEVICES", "EA", 165, 395],
-  ["D-REC-20T", "20A 5-20R T-slot receptacle, commercial", "DEVICES", "EA", 495, 995],
-  ["D-GFCI-15", "15A GFCI receptacle, tamper-resistant", "DEVICES", "EA", 1950, 3695],
-  ["D-SW-1P", "15A single-pole switch, decorator", "DEVICES", "EA", 210, 495],
-  ["D-SW-3W", "15A 3-way switch, decorator", "DEVICES", "EA", 395, 895],
-  ["D-OCC-WALL", "Wall occupancy sensor switch", "DEVICES", "EA", 3850, 6995],
-  ["D-PLT-1G", "1-gang decorator wall plate", "DEVICES", "EA", 65, 175],
-  ["BR-QO-115", "15A 1-pole plug-on breaker", "BREAKERS", "EA", 1150, 2195],
-  ["BR-QO-120", "20A 1-pole plug-on breaker", "BREAKERS", "EA", 1150, 2195],
-  ["BR-QO-230", "30A 2-pole plug-on breaker", "BREAKERS", "EA", 2890, 5295],
-  ["BR-AFCI-115", "15A combination AFCI breaker", "BREAKERS", "EA", 5450, 9495],
-  ["BR-PNL-42", "225A 42-circuit 120/208V panelboard", "BREAKERS", "EA", 89500, 142500],
-  ["BR-DISC-60", "60A 600V fused disconnect, NEMA 3R", "BREAKERS", "EA", 21500, 36500],
-  ["L-TRF-2x4", "2x4 LED troffer, 4000K", "LIGHTING", "EA", 6450, 11995],
-  ["L-HB-150", "150W LED high bay, 5000K", "LIGHTING", "EA", 15800, 27500],
-  ["L-WP-40", "40W LED wall pack, photocell", "LIGHTING", "EA", 8900, 15995],
-  ["L-EXIT-RM", "Running-man LED exit sign, battery", "LIGHTING", "EA", 7450, 12995],
-  ["L-EMG-2H", "Emergency battery unit, 2 heads", "LIGHTING", "EA", 9850, 16995],
-  ["L-PNL-1x4", "1x4 LED panel, 4000K", "LIGHTING", "EA", 4250, 7995],
-  ["F-STRUT-10", "1-5/8\" strut channel, 10 ft", "FASTENERS", "EA", 2450, 4250],
-  ["F-ATR-38", "3/8\" all-thread rod, 10 ft", "FASTENERS", "EA", 795, 1495],
-  ["F-1HS-075", "3/4\" EMT one-hole strap", "FASTENERS", "EA", 22, 55],
-  ["F-TIE-8", "8\" cable ties, black, 100 pk", "FASTENERS", "PKG", 595, 1195],
-  ["F-ANC-14", "1/4\" concrete wedge anchor", "FASTENERS", "EA", 38, 95],
-  ["M-WN-YEL", "Yellow wire nuts, box of 100", "MISC", "BOX", 1190, 2195],
-  ["M-TAPE-BK", "Vinyl electrical tape, black", "MISC", "ROLL", 165, 395],
-  ["M-PULL-1L", "Wire pulling lubricant, 1 L", "MISC", "EA", 1450, 2495],
-  ["M-LBL-ARC", "Arc flash warning labels, 10 pk", "MISC", "PKG", 1850, 3295],
-  ["M-FIRE-CAUL", "Firestop sealant, 300 mL", "MISC", "EA", 1995, 3695],
+// [sku, description, category, unit, cost cents]. No sell price: materials are marked up per quote/invoice.
+const INVENTORY: [string, string, string, string, number][] = [
+  ["W-12-2-NMD", "12/2 NMD90 copper cable", "WIRE", "FT", 62],
+  ["W-14-2-NMD", "14/2 NMD90 copper cable", "WIRE", "FT", 45],
+  ["W-10-3-AC90", "10/3 AC90 armoured cable", "WIRE", "FT", 185],
+  ["W-12-2-AC90", "12/2 AC90 armoured cable", "WIRE", "FT", 98],
+  ["W-6-RW90-BK", "#6 RW90 copper, black", "WIRE", "FT", 165],
+  ["W-12-T90-BK", "#12 T90 stranded, black", "WIRE", "FT", 21],
+  ["W-12-T90-WH", "#12 T90 stranded, white", "WIRE", "FT", 21],
+  ["W-12-T90-GN", "#12 T90 stranded, green", "WIRE", "FT", 21],
+  ["W-TECK-3C10", "3C #10 TECK90 cable", "WIRE", "M", 720],
+  ["C-EMT-075", "3/4\" EMT conduit, 10 ft", "CONDUIT", "EA", 1150],
+  ["C-EMT-050", "1/2\" EMT conduit, 10 ft", "CONDUIT", "EA", 780],
+  ["C-EMT-100", "1\" EMT conduit, 10 ft", "CONDUIT", "EA", 1890],
+  ["C-PVC-100", "1\" rigid PVC conduit, 10 ft", "CONDUIT", "EA", 1240],
+  ["C-EMTC-075", "3/4\" EMT set-screw connector", "CONDUIT", "EA", 95],
+  ["C-EMTK-075", "3/4\" EMT set-screw coupling", "CONDUIT", "EA", 88],
+  ["C-LT-050", "1/2\" liquid-tight flex, per ft", "CONDUIT", "FT", 145],
+  ["B-4SQ-D", "4\" square box, 2-1/8\" deep", "BOXES", "EA", 310],
+  ["B-1110", "1110 device box", "BOXES", "EA", 245],
+  ["B-PLR-1G", "1-gang plaster ring", "BOXES", "EA", 135],
+  ["B-JB-6x6", "6x6x4 NEMA 1 junction box", "BOXES", "EA", 1450],
+  ["B-WP-1G", "1-gang weatherproof in-use cover", "BOXES", "EA", 1120],
+  ["D-REC-15", "15A 5-15R decorator receptacle, white", "DEVICES", "EA", 165],
+  ["D-REC-20T", "20A 5-20R T-slot receptacle, commercial", "DEVICES", "EA", 495],
+  ["D-GFCI-15", "15A GFCI receptacle, tamper-resistant", "DEVICES", "EA", 1950],
+  ["D-SW-1P", "15A single-pole switch, decorator", "DEVICES", "EA", 210],
+  ["D-SW-3W", "15A 3-way switch, decorator", "DEVICES", "EA", 395],
+  ["D-OCC-WALL", "Wall occupancy sensor switch", "DEVICES", "EA", 3850],
+  ["D-PLT-1G", "1-gang decorator wall plate", "DEVICES", "EA", 65],
+  ["BR-QO-115", "15A 1-pole plug-on breaker", "BREAKERS", "EA", 1150],
+  ["BR-QO-120", "20A 1-pole plug-on breaker", "BREAKERS", "EA", 1150],
+  ["BR-QO-230", "30A 2-pole plug-on breaker", "BREAKERS", "EA", 2890],
+  ["BR-AFCI-115", "15A combination AFCI breaker", "BREAKERS", "EA", 5450],
+  ["BR-PNL-42", "225A 42-circuit 120/208V panelboard", "BREAKERS", "EA", 89500],
+  ["BR-DISC-60", "60A 600V fused disconnect, NEMA 3R", "BREAKERS", "EA", 21500],
+  ["L-TRF-2x4", "2x4 LED troffer, 4000K", "LIGHTING", "EA", 6450],
+  ["L-HB-150", "150W LED high bay, 5000K", "LIGHTING", "EA", 15800],
+  ["L-WP-40", "40W LED wall pack, photocell", "LIGHTING", "EA", 8900],
+  ["L-EXIT-RM", "Running-man LED exit sign, battery", "LIGHTING", "EA", 7450],
+  ["L-EMG-2H", "Emergency battery unit, 2 heads", "LIGHTING", "EA", 9850],
+  ["L-PNL-1x4", "1x4 LED panel, 4000K", "LIGHTING", "EA", 4250],
+  ["F-STRUT-10", "1-5/8\" strut channel, 10 ft", "FASTENERS", "EA", 2450],
+  ["F-ATR-38", "3/8\" all-thread rod, 10 ft", "FASTENERS", "EA", 795],
+  ["F-1HS-075", "3/4\" EMT one-hole strap", "FASTENERS", "EA", 22],
+  ["F-TIE-8", "8\" cable ties, black, 100 pk", "FASTENERS", "PKG", 595],
+  ["F-ANC-14", "1/4\" concrete wedge anchor", "FASTENERS", "EA", 38],
+  ["M-WN-YEL", "Yellow wire nuts, box of 100", "MISC", "BOX", 1190],
+  ["M-TAPE-BK", "Vinyl electrical tape, black", "MISC", "ROLL", 165],
+  ["M-PULL-1L", "Wire pulling lubricant, 1 L", "MISC", "EA", 1450],
+  ["M-LBL-ARC", "Arc flash warning labels, 10 pk", "MISC", "PKG", 1850],
+  ["M-FIRE-CAUL", "Firestop sealant, 300 mL", "MISC", "EA", 1995],
 ];
 
 const VENDORS = [
@@ -163,6 +163,16 @@ const WORK_ORDERS: { type: string; status: string; priority: string; summary: st
 ];
 
 type Ids = Map<string, string>;
+
+/**
+ * Demo only: bigger jobs get a smaller markup. Real markups are typed on each quote/invoice;
+ * these tiers just make the demo data look realistic.
+ */
+function demoMarkupBp(materialCostCents: number): number {
+  if (materialCostCents < 100_000) return 3500;
+  if (materialCostCents < 500_000) return 2500;
+  return 1500;
+}
 
 async function idsByCode(rows: Promise<{ id: string; code: string }[]>): Promise<Ids> {
   return new Map((await rows).map((r) => [r.code, r.id]));
@@ -270,9 +280,9 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
 
   // Inventory: 50 items with warehouse stock and some on trucks.
   const items: InventoryItem[] = [];
-  for (const [i, [sku, description, cat, unit, cost, price]] of INVENTORY.entries()) {
+  for (const [i, [sku, description, cat, unit, cost]] of INVENTORY.entries()) {
     const item = await db.inventoryItem.create({
-      data: { sku, description, categoryId: invCats.get(cat), unitId: units.get(unit), costCents: cost, priceCents: price, reorderPoint: new Prisma.Decimal(unit === "FT" ? 250 : 10) },
+      data: { sku, description, categoryId: invCats.get(cat), unitId: units.get(unit), costCents: cost, reorderPoint: new Prisma.Decimal(unit === "FT" ? 250 : 10) },
     });
     items.push(item);
     await db.stockLevel.create({ data: { itemId: item.id, locationId: warehouse.id, quantity: new Prisma.Decimal(unit === "FT" ? 1000 + i * 50 : 20 + i) } });
@@ -409,7 +419,6 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
           description: item.description,
           quantity: new Prisma.Decimal(m === 0 ? 2 : m === 1 ? 1 : 25),
           unitCostCents: item.costCents,
-          unitPriceCents: item.priceCents,
         },
       });
     }
@@ -428,12 +437,18 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
   for (const [i, q] of quoteDefs.entries()) {
     const site = sites[(i * 5 + 1) % sites.length];
     const jp = rates.get("JOURNEYPERSON")!;
+    const quoteMaterials = [0, 1].map((m) => ({ item: items[(i * 9 + m * 4 + 30) % items.length], quantity: String((4 + m * 6) * (i + 1) * (i + 1) * 3) }));
+    const markup = demoMarkupBp(quoteMaterials.reduce((sum, { item, quantity }) => sum + lineAmountCents(quantity, item.costCents), 0));
     const lines = [
       { kind: "LABOR" as const, laborRateId: jp.id, description: "Journeyperson labour", quantity: String(16 + i * 8), unitCostCents: jp.costCents, unitPriceCents: jp.sellCents },
-      ...[0, 1].map((m) => {
-        const item = items[(i * 9 + m * 4 + 30) % items.length];
-        return { kind: "MATERIAL" as const, itemId: item.id, description: item.description, quantity: String(4 + m * 6), unitCostCents: item.costCents, unitPriceCents: item.priceCents };
-      }),
+      ...quoteMaterials.map(({ item, quantity }) => ({
+        kind: "MATERIAL" as const,
+        itemId: item.id,
+        description: item.description,
+        quantity,
+        unitCostCents: item.costCents,
+        unitPriceCents: markupPriceCents(item.costCents, markup),
+      })),
     ];
     const priced = lines.map((l, n) => ({ ...l, sortOrder: n, quantity: new Prisma.Decimal(l.quantity), amountCents: lineAmountCents(l.quantity, l.unitPriceCents) }));
     const totals = computeTotals(priced.map((l) => ({ amountCents: l.amountCents, taxComponents: gstPst })));
@@ -444,6 +459,7 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
         jobSiteId: site.id,
         statusId: quoteStatuses.get(q.status)!,
         taxLevelId: taxLevels.get("GST_PST"),
+        materialMarkupBp: markup,
         title: q.title,
         scope: "Supply and install as per drawings E1–E3. Includes SaskPower electrical permit and inspection.",
         exclusions: "Patching and painting by others. Work during regular hours only.",
@@ -464,13 +480,14 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
   for (const [i, wo] of billable.entries()) {
     const time = await db.timeEntry.findMany({ where: { workOrderId: wo.id }, include: { laborRate: true, itemType: true } });
     const mats = await db.materialUsage.findMany({ where: { workOrderId: wo.id } });
+    const markup = demoMarkupBp(mats.reduce((sum, m) => sum + lineAmountCents(m.quantity.toString(), m.unitCostCents), 0));
     const lines = [
       ...time.map((t) => {
         const hours = (t.hoursHundredths / 100).toFixed(2);
         const unit = Math.round(((t.laborRate?.sellCents ?? 0) * t.itemType.multiplierBp) / 10000);
         return { kind: "LABOR" as const, laborRateId: t.laborRateId, description: `${t.itemType.label}: ${t.description ?? ""}`.trim(), quantity: hours, unitCostCents: t.laborRate?.costCents ?? 0, unitPriceCents: unit };
       }),
-      ...mats.map((m) => ({ kind: "MATERIAL" as const, itemId: m.itemId, description: m.description, quantity: m.quantity.toString(), unitCostCents: m.unitCostCents, unitPriceCents: m.unitPriceCents })),
+      ...mats.map((m) => ({ kind: "MATERIAL" as const, itemId: m.itemId, description: m.description, quantity: m.quantity.toString(), unitCostCents: m.unitCostCents, unitPriceCents: markupPriceCents(m.unitCostCents, markup) })),
     ];
     const priced = lines.map((l, n) => ({ ...l, sortOrder: n, quantity: new Prisma.Decimal(l.quantity), amountCents: lineAmountCents(l.quantity, l.unitPriceCents) }));
     const totals = computeTotals(priced.map((l) => ({ amountCents: l.amountCents, taxComponents: gstPst })));
@@ -484,6 +501,7 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
         statusId: invoiceStatuses.get(status)!,
         paymentTermId: terms.get("NET30"),
         taxLevelId: taxLevels.get("GST_PST"),
+        materialMarkupBp: markup,
         customerPoNumber: wo.customerPoNumber,
         invoiceDate: dateOnly(-30 + i * 5),
         dueDate: dateOnly(i * 5),
@@ -498,6 +516,10 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
         workOrders: { create: [{ workOrderId: wo.id }] },
       },
     });
+    // Billed materials get the price they were invoiced at.
+    for (const m of mats) {
+      await db.materialUsage.update({ where: { id: m.id }, data: { unitPriceCents: markupPriceCents(m.unitCostCents, markup) } });
+    }
     if (paid > 0) {
       await db.payment.create({ data: { invoiceId: invoice.id, paidAt: dateOnly(-3), amountCents: paid, methodId: methods.get(i % 2 ? "EFT" : "CHEQUE"), reference: `${i % 2 ? "EFT" : "CHQ"}${70120 + i}` } });
     }

@@ -21,6 +21,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
         { label: "Customer", value: q.customer.name },
         { label: "Status", value: q.status.label },
         { label: "Lines", value: q._count.lines },
+        { label: "Material markup", value: `${(q.materialMarkupBp / 100).toFixed(1)}%` },
         { label: "Subtotal", value: formatCents(q.subtotalCents) },
         { label: "Tax", value: formatCents(q.taxCents) },
         { label: "Total", value: formatCents(q.totalCents) },

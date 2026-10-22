@@ -20,8 +20,8 @@ Sparks: one inventory item per line, with Trimble's pricing kept as-is, plus war
 | Totals row | used to check the import reconciles |
 
 Category (Conduit, Wire, Boxes, Devices, Breakers, Lighting, Fasteners, Misc) and unit (ft / each)
-are **guessed** from the description and can be corrected in Sparks. Sell prices aren't in the export,
-so new items get a sell price of 0 (not set); re-imports never overwrite sell prices.
+are **guessed** from the description and can be corrected in Sparks. Items store **cost only**:
+sell prices are set on each quote or invoice with that job's markup.
 
 ## What it checks
 

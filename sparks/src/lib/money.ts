@@ -106,6 +106,24 @@ export function applyRateBp(amountCents: number, rateBp: number): number {
   return toSafeNumber(divRoundHalfUp(BigInt(amountCents) * BigInt(rateBp), BP));
 }
 
+/**
+ * Sell price from cost and a markup on cost (basis points): 2500 = cost + 25%.
+ * Markup, not margin: $100 cost at 25% markup sells for $125 (a 20% margin).
+ * Works per price unit, so a per-C cost gives a per-C sell price.
+ */
+export function markupPriceCents(costCents: number, markupBp: number): number {
+  assertInt(costCents, "costCents");
+  assertInt(markupBp, "markupBp");
+  if (markupBp < 0) throw new RangeError("Markup cannot be negative");
+  return costCents + applyRateBp(costCents, markupBp);
+}
+
+/** Markup on cost actually achieved, in basis points (for showing what a hand-edited price works out to). */
+export function markupBpFor(costCents: number, priceCents: number): number | null {
+  if (costCents <= 0) return null;
+  return Number(divRoundHalfUp(BigInt(priceCents - costCents) * BP, BigInt(costCents)));
+}
+
 /** Discount in cents for a subtotal. Never more than the subtotal. */
 export function discountCents(subtotalCents: number, discount: Discount): number {
   assertInt(subtotalCents, "subtotalCents");

@@ -21,6 +21,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         { label: "Customer", value: i.customer.name },
         { label: "Status", value: i.status.label },
         { label: "Invoice date", value: i.invoiceDate.toISOString().slice(0, 10) },
+        { label: "Material markup", value: `${(i.materialMarkupBp / 100).toFixed(1)}%` },
         { label: "Subtotal", value: formatCents(i.subtotalCents) },
         ...i.taxes.map((t) => ({ label: t.label, value: formatCents(t.taxCents) })),
         { label: "Total", value: formatCents(i.totalCents) },

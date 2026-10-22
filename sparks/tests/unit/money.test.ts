@@ -7,6 +7,8 @@ import {
   formatCents,
   formatHours,
   lineAmountCents,
+  markupBpFor,
+  markupPriceCents,
   netCostCents,
   parseCents,
   parseQuantityMilli,
@@ -77,6 +79,27 @@ describe("Trimble price units (E / C / M)", () => {
   });
   it("handles fractional quantities with C pricing", () => {
     expect(lineAmountCents("12.5", 19100, "C")).toBe(2388); // 12.5 ft @ $191/C = $23.875 → $23.88
+  });
+});
+
+describe("material markup", () => {
+  it("adds a markup on cost", () => {
+    expect(markupPriceCents(10000, 2500)).toBe(12500);
+    expect(markupPriceCents(10000, 0)).toBe(10000);
+    expect(markupPriceCents(333, 1500)).toBe(383); // 49.95 → 50
+  });
+  it("works on per-C costs and feeds line amounts", () => {
+    const perC = markupPriceCents(15000, 2000); // $150.00/C cost at 20% → $180.00/C
+    expect(perC).toBe(18000);
+    expect(lineAmountCents("350", perC, "C")).toBe(63000); // 350 ft → $630.00
+  });
+  it("is markup, not margin", () => {
+    expect(markupBpFor(10000, 12500)).toBe(2500);
+    expect(markupBpFor(0, 500)).toBeNull();
+    expect(markupBpFor(10000, 9000)).toBe(-1000); // sold below cost
+  });
+  it("rejects negative markups", () => {
+    expect(() => markupPriceCents(100, -1)).toThrow(RangeError);
   });
 });
 

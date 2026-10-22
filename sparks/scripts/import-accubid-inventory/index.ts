@@ -114,10 +114,10 @@ async function apply(db: PrismaClient, result: ParseResult, file: string, locati
       noLabor: item.noLabor,
     };
     const existing = await db.inventoryItem.findUnique({ where: { sku: item.sku }, select: { id: true } });
-    // Sell price isn't in the Accubid export; it's left at 0 (not set) for new items and never overwritten.
+    // Cost only: sell prices are set on each quote/invoice with that job's markup.
     const saved = existing
       ? await db.inventoryItem.update({ where: { id: existing.id }, data })
-      : await db.inventoryItem.create({ data: { ...data, sku: item.sku, priceCents: 0 } });
+      : await db.inventoryItem.create({ data: { ...data, sku: item.sku } });
     if (existing) updated++;
     else created++;
     await db.stockLevel.upsert({

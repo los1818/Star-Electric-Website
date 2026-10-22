@@ -639,7 +639,8 @@ model MaterialUsage {
   quantity       Decimal            @db.Decimal(12, 3)
   priceUnit      PriceUnit          @default(E)
   unitCostCents  Int
-  unitPriceCents Int
+  /// Sell price per priceUnit, set when the material is billed on an invoice.
+  unitPriceCents Int?
   usedAt         DateTime           @default(now())
   invoiceLineId  String?
   invoiceLine    InvoiceLine?       @relation(fields: [invoiceLineId], references: [id], onDelete: SetNull)
@@ -652,30 +653,33 @@ model MaterialUsage {
 // ---------------------------------------------------------------------------
 
 model Quote {
-  id            String       @id @default(cuid())
-  number        String       @unique
-  customerId    String
-  customer      Customer     @relation(fields: [customerId], references: [id])
-  jobSiteId     String?
-  jobSite       JobSite?     @relation(fields: [jobSiteId], references: [id])
-  statusId      String
-  status        QuoteStatus  @relation(fields: [statusId], references: [id])
-  taxLevelId    String?
-  taxLevel      TaxLevel?    @relation(fields: [taxLevelId], references: [id])
-  title         String
-  scope         String?      @db.Text
-  exclusions    String?      @db.Text
-  issuedAt      DateTime?
-  validUntil    DateTime?    @db.Date
-  discountType  DiscountType @default(NONE)
+  id               String       @id @default(cuid())
+  number           String       @unique
+  customerId       String
+  customer         Customer     @relation(fields: [customerId], references: [id])
+  jobSiteId        String?
+  jobSite          JobSite?     @relation(fields: [jobSiteId], references: [id])
+  statusId         String
+  status           QuoteStatus  @relation(fields: [statusId], references: [id])
+  taxLevelId       String?
+  taxLevel         TaxLevel?    @relation(fields: [taxLevelId], references: [id])
+  title            String
+  scope            String?      @db.Text
+  exclusions       String?      @db.Text
+  issuedAt         DateTime?
+  validUntil       DateTime?    @db.Date
+  discountType     DiscountType @default(NONE)
   /// Basis points for PERCENT, cents for AMOUNT.
-  discountValue Int          @default(0)
-  subtotalCents Int          @default(0)
-  discountCents Int          @default(0)
-  taxCents      Int          @default(0)
-  totalCents    Int          @default(0)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  discountValue    Int          @default(0)
+  /// Markup on cost for material lines (basis points, 2500 = 25%). Set per document: it varies
+  /// with job size and current costs. Lines default to cost + markup and can be overridden.
+  materialMarkupBp Int          @default(0)
+  subtotalCents    Int          @default(0)
+  discountCents    Int          @default(0)
+  taxCents         Int          @default(0)
+  totalCents       Int          @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   lines     QuoteLine[]
   workOrder WorkOrder?
@@ -726,6 +730,9 @@ model Invoice {
   creditNotes      Invoice[]     @relation("CreditNotes")
   discountType     DiscountType  @default(NONE)
   discountValue    Int           @default(0)
+  /// Markup on cost for material lines (basis points, 2500 = 25%). Set per document: it varies
+  /// with job size and current costs. Lines default to cost + markup and can be overridden.
+  materialMarkupBp Int           @default(0)
   subtotalCents    Int           @default(0)
   discountCents    Int           @default(0)
   taxCents         Int           @default(0)
@@ -825,8 +832,7 @@ model InventoryItem {
   discountBp      Int                @default(0)
   /// Net cost per priceUnit (trade price less discount).
   costCents       Int
-  /// Sell price per priceUnit. 0 = not set yet.
-  priceCents      Int
+  // No stored sell price: materials are priced on each quote/invoice as cost + that document's markup.
   /// When the trade price was last updated (Trimble "Date").
   priceDate       DateTime?          @db.Date
   /// Estimating labour: hours per laborUnit to install (Trimble "DB Labor").
