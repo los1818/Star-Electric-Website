@@ -26,8 +26,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     select: { id: true, name: true, email: true, role: true, active: true, employeeId: true },
   });
   if (!user || !user.active) return null;
-  const { active: _active, ...rest } = user;
-  return rest;
+  return { id: user.id, name: user.name, email: user.email, role: user.role, employeeId: user.employeeId };
 });
 
 /** For pages/layouts: redirect to login if signed out, to /forbidden if not permitted. */
