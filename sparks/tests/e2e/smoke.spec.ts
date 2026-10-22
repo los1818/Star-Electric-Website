@@ -87,3 +87,32 @@ test("a user awaiting access sees nothing until an administrator assigns a role"
   await row.getByRole("button", { name: "Save" }).click();
   await expect(row.getByText("Saved")).toBeVisible();
 });
+
+test("administrator sets markup tiers and quotes show the suggested markup", async ({ page }) => {
+  await loginAs(page, "Alex Admin");
+  await page.goto("/settings/markup-tiers");
+  // Seeded placeholders: $0 → 35%, $1,000 → 25%, $5,000 → 15%. Raise the $1,000 tier to 30%.
+  await expect(page.getByRole("textbox", { name: "Tier 2 from" })).toHaveValue("1000.00");
+  await page.getByRole("textbox", { name: "Tier 2 markup" }).fill("30");
+  await page.getByRole("button", { name: "Save tiers" }).click();
+  await expect(page.getByText("Saved")).toBeVisible();
+
+  // Invalid sets are refused with a reason and nothing changes.
+  await page.getByRole("textbox", { name: "Tier 1 from" }).fill("10");
+  await page.getByRole("button", { name: "Save tiers" }).click();
+  await expect(page.getByText("The first tier must start at $0")).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Tier 1 from" })).toHaveValue("0.00");
+  await expect(page.getByRole("textbox", { name: "Tier 2 markup" })).toHaveValue("30");
+
+  // Q-000001 has ~$2,282 of material and was priced at 25%; it now shows the new suggestion.
+  await page.goto("/search?q=Q-000001");
+  await page.getByRole("main").getByRole("link", { name: /Q-000001/ }).click();
+  await expect(page.getByText("25% (suggested 30%)")).toBeVisible();
+
+  // Put the placeholder back for reruns.
+  await page.goto("/settings/markup-tiers");
+  await page.getByRole("textbox", { name: "Tier 2 markup" }).fill("25");
+  await page.getByRole("button", { name: "Save tiers" }).click();
+  await expect(page.getByText("Saved")).toBeVisible();
+});

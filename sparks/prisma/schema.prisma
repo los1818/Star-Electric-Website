@@ -391,6 +391,17 @@ model EquipmentType {
   equipment Equipment[]
 }
 
+/// Suggested material markup by job size (editable in Settings → Markup tiers). A quote or
+/// invoice whose material cost is at least `minMaterialCostCents` gets this tier's markup as
+/// its starting point; the highest matching threshold wins. Users can always change it.
+model MarkupTier {
+  id                   String   @id @default(cuid())
+  minMaterialCostCents Int      @unique
+  markupBp             Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
 // ---------------------------------------------------------------------------
 // Customers, sites, people
 // ---------------------------------------------------------------------------

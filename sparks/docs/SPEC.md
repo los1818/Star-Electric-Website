@@ -1,6 +1,6 @@
 # Sparks — Specification
 
-**Status: DRAFT v0.5, written by Claude because no SPEC.md was supplied.**
+**Status: DRAFT v0.6, written by Claude because no SPEC.md was supplied.**
 It is modelled on ServiceBox and adjusted for commercial electrical contracting. Anything marked
 **[ASSUMPTION]** needs confirmation from Star Electric before the phase that depends on it.
 
@@ -132,6 +132,11 @@ status, mapped entity/id). Generic because the Trimble table list isn't known ye
 - Each quote and invoice has its own **material markup %** (markup on cost, not margin: $100 at 25% = $125).
   Material lines default to current cost + that markup and can be overridden line by line; each line keeps its
   cost so the job's real margin can be reported.
+- **Suggested markup by job size.** `MarkupTier` rows ("material cost from $X → Y%") are edited by admins in
+  Settings → Markup tiers. A document's total material cost picks the highest tier it reaches, and that markup
+  is the starting point on new quotes/invoices (Phase 4); it's shown beside the markup actually used.
+  The first tier must start at $0. Seeded tiers are placeholders: $0 → 35%, $1,000 → 25%, $5,000 → 15%.
+  **[OPEN: Star Electric's real tiers]**
 - Materials logged on a work order record their cost at the time they're used; their sell price is set when
   they're billed on an invoice. Labour is still priced from the labour rate table.
 
@@ -185,4 +190,5 @@ Cancelled from any open state. Allowed transitions are stored with the status ta
 | 2026-10-22 | ServiceBox CSV import moves into Phase 1. |
 | 2026-10-22 | Inventory and material pricing modelled on Trimble Accubid (E/C/M price units, trade price, discount, labour units). |
 | 2026-10-22 | No stored sell price on materials: markup is set per quote/invoice (varies with job size and cost changes). |
+| 2026-10-22 | Sparks suggests a starting markup from editable tiers by job material cost; users can always override. |
 | 2026-10-22 | App renamed from "Star FieldOps" to **Sparks**; folder `fieldops/` → `sparks/`. |

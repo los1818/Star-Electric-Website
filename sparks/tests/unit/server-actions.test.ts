@@ -11,6 +11,8 @@ vi.mock("@/lib/db", () => ({
     auditLog: { create: vi.fn() },
     customerCategory: { update: vi.fn() },
     recentItem: { deleteMany: vi.fn() },
+    markupTier: { deleteMany: vi.fn(), createMany: vi.fn() },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -19,6 +21,7 @@ const { db } = await import("@/lib/db");
 const { updateLookupRow } = await import("@/server/actions/settings");
 const { clearRecentItems } = await import("@/server/actions/recent");
 const { updateUserAccess } = await import("@/server/actions/users");
+const { saveMarkupTiers } = await import("@/server/actions/markup-tiers");
 
 type Mocked = ReturnType<typeof vi.fn>;
 
@@ -130,5 +133,34 @@ describe("updateUserAccess (users:manage)", () => {
     signInAs({ id: "admin1", role: "ADMIN" });
     // @ts-expect-error: deliberately invalid role
     expect((await updateUserAccess({ ...assign, role: "SUPERUSER" })).ok).toBe(false);
+  });
+});
+
+describe("saveMarkupTiers (settings:manage)", () => {
+  const tiers = [
+    { minMaterialCostCents: 500_000, markupBp: 1500 },
+    { minMaterialCostCents: 0, markupBp: 3000 },
+  ];
+
+  it("lets an administrator replace the tiers, sorted by threshold", async () => {
+    signInAs({ id: "admin1", role: "ADMIN" });
+    const result = await saveMarkupTiers({ tiers });
+    expect(result).toEqual({ ok: true, data: [tiers[1], tiers[0]] });
+    expect(db.$transaction).toHaveBeenCalledOnce();
+    expect(db.markupTier.createMany).toHaveBeenCalledWith({ data: [tiers[1], tiers[0]] });
+    expect(db.auditLog.create).toHaveBeenCalledOnce();
+  });
+
+  it.each(["OFFICE", "TECHNICIAN"] as const)("rejects %s", async (role) => {
+    signInAs({ id: "u", role });
+    expect((await saveMarkupTiers({ tiers })).ok).toBe(false);
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid tiers with a readable message", async () => {
+    signInAs({ id: "admin1", role: "ADMIN" });
+    const result = await saveMarkupTiers({ tiers: [{ minMaterialCostCents: 100_000, markupBp: 2000 }] });
+    expect(result).toEqual({ ok: false, error: "The first tier must start at $0 so every job gets a suggestion." });
+    expect(db.$transaction).not.toHaveBeenCalled();
   });
 });

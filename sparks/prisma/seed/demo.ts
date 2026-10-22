@@ -1,5 +1,6 @@
 import { Prisma, type InventoryItem, type PrismaClient, type Role } from "@prisma/client";
 import { computeTotals, lineAmountCents, markupPriceCents, type TaxComponentRate } from "../../src/lib/money";
+import { suggestMarkupBp } from "../../src/lib/markup";
 
 // Fake demo data for development. Every business name is invented; addresses use real
 // Regina street names with made-up numbers; phone numbers are in the fictional 555-01xx range.
@@ -164,15 +165,7 @@ const WORK_ORDERS: { type: string; status: string; priority: string; summary: st
 
 type Ids = Map<string, string>;
 
-/**
- * Demo only: bigger jobs get a smaller markup. Real markups are typed on each quote/invoice;
- * these tiers just make the demo data look realistic.
- */
-function demoMarkupBp(materialCostCents: number): number {
-  if (materialCostCents < 100_000) return 3500;
-  if (materialCostCents < 500_000) return 2500;
-  return 1500;
-}
+
 
 async function idsByCode(rows: Promise<{ id: string; code: string }[]>): Promise<Ids> {
   return new Map((await rows).map((r) => [r.code, r.id]));
@@ -195,6 +188,9 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
   const units = await idsByCode(db.unitOfMeasure.findMany());
   const eqTypes = await idsByCode(db.equipmentType.findMany());
   const methods = await idsByCode(db.paymentMethod.findMany());
+  // Demo documents use the suggested markup for their size, as a user accepting the suggestion would.
+  const markupTiers = await db.markupTier.findMany();
+  const demoMarkupBp = (materialCost: number) => suggestMarkupBp(materialCost, markupTiers) ?? 0;
 
   const gstPst: TaxComponentRate[] = (
     await db.taxComponent.findMany({ where: { code: { in: ["GST", "PST"] } }, orderBy: { sortOrder: "asc" } })

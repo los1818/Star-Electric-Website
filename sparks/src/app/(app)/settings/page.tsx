@@ -22,6 +22,10 @@ export default async function SettingsPage() {
         <span>Users and roles</span>
         {pendingUsers > 0 && <span className="rounded bg-amber-100 px-2 text-amber-800">{pendingUsers} awaiting access</span>}
       </Link>
+      <Link href="/settings/markup-tiers" className="mt-2 flex justify-between rounded border border-gray-200 bg-white px-4 py-3 text-sm font-medium hover:border-brand">
+        <span>Markup tiers</span>
+        <span className="text-gray-500">Suggested material markup by job size</span>
+      </Link>
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-gray-500">Lookup tables</h2>
       <ul className="mt-2 grid gap-2 sm:grid-cols-2">
         {counts.map(([key, count]) => (

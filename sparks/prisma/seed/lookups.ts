@@ -167,6 +167,13 @@ export const EQUIPMENT_TYPES = withOrder([
   { code: "EV_CHARGER", label: "EV Charger" },
 ]);
 
+// Placeholder tiers until Star Electric sets its own in Settings → Markup tiers.
+export const MARKUP_TIERS = [
+  { minMaterialCostCents: 0, markupBp: 3500 },
+  { minMaterialCostCents: 100_000, markupBp: 2500 },
+  { minMaterialCostCents: 500_000, markupBp: 1500 },
+];
+
 export const SEQUENCES = [
   { code: "WORK_ORDER", prefix: "WO-", nextValue: 1, padding: 6 },
   { code: "QUOTE", prefix: "Q-", nextValue: 1, padding: 6 },
@@ -232,6 +239,9 @@ export async function seedLookups(db: PrismaClient): Promise<void> {
       });
     }
   }
+
+  // Only when none exist, so edits made in Settings are never overwritten.
+  if ((await db.markupTier.count()) === 0) await db.markupTier.createMany({ data: MARKUP_TIERS });
 
   for (const seq of SEQUENCES) {
     await db.sequence.upsert({ where: { code: seq.code }, create: seq, update: {} });
