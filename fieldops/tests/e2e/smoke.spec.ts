@@ -1,0 +1,65 @@
+import { expect, test, type Page } from "@playwright/test";
+import { NAV_ITEMS } from "../../src/lib/nav";
+
+// Requires a seeded database (npm run db:seed).
+
+async function loginAs(page: Page, name: string) {
+  await page.goto("/login");
+  await page.getByRole("button", { name: new RegExp(`^${name}`) }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+}
+
+test("administrator can log in and open every sidebar page", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await loginAs(page, "Alex Admin");
+  const sidebar = page.getByRole("navigation", { name: "Modules" });
+
+  for (const item of NAV_ITEMS) {
+    await test.step(item.label, async () => {
+      await sidebar.getByRole("link", { name: item.label, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`${item.href}$`));
+      await expect(page.getByRole("heading", { level: 1, name: item.label })).toBeVisible();
+    });
+  }
+
+  expect(errors).toEqual([]);
+});
+
+test("search finds a work order and opening it adds it to recent items", async ({ page }) => {
+  await loginAs(page, "Olivia Office");
+  await page.getByRole("searchbox", { name: "Search" }).fill("WO-000005");
+  await page.getByRole("searchbox", { name: "Search" }).press("Enter");
+  await page.getByRole("main").getByRole("link", { name: /WO-000005/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: /WO-000005/ })).toBeVisible();
+  await expect(page.getByTestId("recent-items").getByRole("link").first()).toContainText("WO-000005");
+});
+
+test("technicians only see their modules and are blocked from others", async ({ page }) => {
+  await loginAs(page, "Marcus Lindqvist");
+  const sidebar = page.getByRole("navigation", { name: "Modules" });
+  await expect(sidebar.getByRole("link", { name: "Work Orders", exact: true })).toBeVisible();
+  await expect(sidebar.getByRole("link", { name: "Invoices", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toHaveCount(0);
+
+  await page.goto("/invoices");
+  await expect(page).toHaveURL(/\/forbidden$/);
+  await page.goto("/settings/tax-levels");
+  await expect(page).toHaveURL(/\/forbidden$/);
+});
+
+test("administrator can edit a lookup table in Settings", async ({ page }) => {
+  await loginAs(page, "Alex Admin");
+  await page.goto("/settings/priorities");
+  const label = page.getByRole("textbox", { name: "Label for LOW" });
+  await label.fill("Low (edited)");
+  await page.getByRole("row").filter({ has: label }).getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Saved")).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Label for LOW" })).toHaveValue("Low (edited)");
+  // Put it back so reruns start from the seeded value.
+  await page.getByRole("textbox", { name: "Label for LOW" }).fill("Low");
+  await page.getByRole("row").filter({ has: page.getByRole("textbox", { name: "Label for LOW" }) }).getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Saved")).toBeVisible();
+});
