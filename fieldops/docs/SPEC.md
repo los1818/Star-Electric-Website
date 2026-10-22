@@ -1,6 +1,6 @@
 # Star FieldOps — Specification
 
-**Status: DRAFT v0.1, written by Claude because no SPEC.md was supplied.**
+**Status: DRAFT v0.2, written by Claude because no SPEC.md was supplied.**
 It is modelled on ServiceBox and adjusted for commercial electrical contracting. Anything marked
 **[ASSUMPTION]** needs confirmation from Star Electric before the phase that depends on it.
 
@@ -19,7 +19,8 @@ Star Electric Corp., Regina, SK. Users are office staff, administrators, and fie
 | **Office** | Customers, job sites, work orders, dispatch, quotes, invoices, POs, inventory, timesheet approval. No Settings or user management. Can't delete posted invoices. |
 | **Technician** | Sees work orders assigned to them (and their job sites/customer contact info), enters their own time and materials, adds notes, photos and signatures. No pricing beyond what's on their WO, no invoices, quotes, or settings. |
 
-Permissions are defined in code as a role → permission map (`customers:read`, `invoices:write`,
+Microsoft Entra ID sign-in is limited to users an administrator has already created (matched by email). A dev-only
+email login exists outside production builds. Permissions are defined in code as a role → permission map (`customers:read`, `invoices:write`,
 `settings:manage`, ...) and enforced on every server action. **[ASSUMPTION]** Three fixed roles
 are enough for now; per-user permission overrides can come later.
 
@@ -50,7 +51,8 @@ a **New** menu (work order, quote, invoice, customer, job site, PO), and **Recen
 All tables have `id` (cuid), `createdAt`, `updatedAt`. Money in integer cents, rates in basis points.
 
 **Identity / org**
-- `User`: Auth.js user; `role` (ADMIN | OFFICE | TECHNICIAN), optional link to `Employee`, `active`
+- `User`: Auth.js user; `role` (ADMIN | OFFICE | TECHNICIAN), optional link to `Employee`, `active`.
+  Roles are a code-level enum (they drive security), unlike the user-editable lookup tables.
 - Auth.js tables: `Account`, `Session`, `VerificationToken`
 - `CompanySetting`: key/value (company name, GST number, address, invoice footer, numbering)
 - `Sequence`: per document type next number (WO, QUOTE, INVOICE, PO)
@@ -64,11 +66,16 @@ All tables have `id` (cuid), `createdAt`, `updatedAt`. Money in integer cents, r
 - `InvoiceStatus`: Draft, Posted, Sent, Partially Paid, Paid, Void
 - `PurchaseOrderStatus`: Draft, Ordered, Partially Received, Received, Closed
 - `TimesheetItemType`: Regular, Overtime 1.5x, Double Time, Travel, Shop Time, Stat Holiday (with `payMultiplierBp`, `billable`)
-- `TaxLevel`: name, components (GST 5%, PST 6%), e.g. "GST + PST", "GST only", "Exempt" **[ASSUMPTION]**
+- `TaxComponent`: one tax and its rate (GST 5%, SK PST 6%)
+- `TaxLevel`: a named set of components: "GST + PST" (default), "GST only", "PST only", "Exempt" **[ASSUMPTION]**
 - `PaymentTerm`: Due on Receipt, Net 15, Net 30, Net 45
 - `UnitOfMeasure`: ea, ft, m, box, roll, hr
 - `InventoryCategory`: Wire & Cable, Conduit & Fittings, Boxes, Devices, Breakers & Panels, Lighting, Fasteners, Misc
-- `LaborRate`: Journeyperson, Apprentice, Foreman, After-hours (cost and sell, per hour)
+- `LaborRate`: Journeyperson, Apprentice, Foreman, After-hours (cost and sell, per hour). Seeded rates are placeholders.
+- `PaymentMethod`: Cheque, EFT, Credit Card, Cash
+- `Trade`: Journeyperson, Apprentice 1st–4th year, Foreman
+- `EquipmentType`: Panelboard, Switchgear, Transformer, Generator, Transfer Switch, UPS, etc.
+- `WorkOrderStatusTransition`: allowed from → to status changes (seeded, editable)
 
 **Business records**
 - `Customer`: name, category, billing address, phone, email, payment term, default tax level, notes, active, credit hold
@@ -81,7 +88,8 @@ All tables have `id` (cuid), `createdAt`, `updatedAt`. Money in integer cents, r
 - `TimeEntry` (timesheet line): employee, date, work order (optional for shop time), item type, hours (in hundredths), labour rate, approved by/at
 - `MaterialUsage`: work order, inventory item (or free text), qty, unit cost, unit price, from location
 - `Quote` + `QuoteLine`: number, customer, job site, status, valid until, lines (labour/material/other), tax level, totals
-- `Invoice` + `InvoiceLine`: number, customer, job site, work order(s), status, dates, terms, lines, tax breakdown, totals, amount paid
+- `Invoice` + `InvoiceLine`: number, customer, job site, work order(s), status, dates, terms, lines, totals, amount paid; credit notes point at the invoice they credit
+- `InvoiceTax`: per-component tax breakdown, frozen when the invoice is posted
 - `Payment`: invoice, date, amount, method, reference
 - `InventoryItem`: SKU, description, category, UoM, cost, sell price, reorder point, active
 - `InventoryLocation`: warehouse or truck (linked to employee)
@@ -93,7 +101,8 @@ All tables have `id` (cuid), `createdAt`, `updatedAt`. Money in integer cents, r
 - `AuditLog`: user, action, entity, entity id, diff JSON
 - `RecentItem`: user, entity type, entity id, label, viewedAt
 
-**Migration staging** (`stg_trimble_*`): raw imported rows plus `importBatchId` and `mappedId`.
+**Migration staging**: `ImportBatch` plus one generic `StgTrimbleRow` table (source table, source key, raw row as JSON,
+status, mapped entity/id). Generic because the Trimble table list isn't known yet.
 
 ## 5. Business rules
 ### Money and tax
@@ -104,7 +113,9 @@ All tables have `id` (cuid), `createdAt`, `updatedAt`. Money in integer cents, r
   are never in code. **[ASSUMPTION: whether PST applies to labour on Star's service work,
   and how contracts for real property (contractor pays PST on materials) are handled, must be
   confirmed with Star's accountant.]**
-- Lines can be marked non-taxable per component.
+- Each quote/invoice/PO line can override the document's tax level (e.g. labour "GST only", materials "GST + PST").
+  Tax per component is computed on the sum of the lines that carry that component.
+- A document discount reduces each component's taxable base in proportion to that base's share of the subtotal.
 - Discounts: percentage or fixed, applied before tax.
 
 ### Numbering
@@ -145,3 +156,7 @@ Cancelled from any open state. Allowed transitions are stored with the status ta
 |---|---|
 | 2026-10-22 | App lives in `fieldops/` in the `star-electric-website` repo (couldn't create a separate repo from this session). |
 | 2026-10-22 | SPEC drafted by Claude from ServiceBox conventions; all [ASSUMPTION] items open. |
+| 2026-10-22 | Per-line tax level override instead of per-component non-taxable flags (§5). |
+| 2026-10-22 | Quantities are Decimal(12,3); hours are integer hundredths; money integer cents (§4). |
+| 2026-10-22 | SSO users must be pre-created by an admin; no self-sign-up (§2). |
+| 2026-10-22 | Global search in Phase 0 is simple substring matching; full-text search comes in Phase 1. |
