@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PERMISSIONS, ROLE_PERMISSIONS, can, canAny, isRole } from "@/lib/auth/permissions";
 import { NAV_ITEMS, visibleNavItems } from "@/lib/nav";
+import { allowedEmailDomains, isAllowedEmail } from "@/lib/auth/config";
 
 describe("role permissions", () => {
   it("gives administrators every permission", () => {
@@ -27,6 +28,18 @@ describe("role permissions", () => {
     }
   });
 
+  it("never shows prices to technicians", () => {
+    expect(can("TECHNICIAN", "pricing:view")).toBe(false);
+    expect(can("OFFICE", "pricing:view")).toBe(true);
+    expect(can("ADMIN", "pricing:view")).toBe(true);
+  });
+
+  it("gives users awaiting access no permissions at all", () => {
+    expect(ROLE_PERMISSIONS.PENDING.size).toBe(0);
+    for (const p of PERMISSIONS) expect(can("PENDING", p)).toBe(false);
+    expect(visibleNavItems("PENDING")).toEqual([]);
+  });
+
   it("denies unknown or missing roles", () => {
     expect(can(undefined, "dashboard:view")).toBe(false);
     expect(can(null, "dashboard:view")).toBe(false);
@@ -41,7 +54,7 @@ describe("role permissions", () => {
     expect(canAny("TECHNICIAN", ["invoices:read", "quotes:read"])).toBe(false);
   });
 
-  it("is a subset hierarchy: technician ⊂ office ⊂ admin", () => {
+  it("is a subset hierarchy: pending ⊂ technician ⊂ office ⊂ admin", () => {
     for (const p of ROLE_PERMISSIONS.TECHNICIAN) expect(can("OFFICE", p)).toBe(true);
     for (const p of ROLE_PERMISSIONS.OFFICE) expect(can("ADMIN", p)).toBe(true);
   });
@@ -63,5 +76,28 @@ describe("sidebar visibility", () => {
 
   it("hides settings from office", () => {
     expect(visibleNavItems("OFFICE").map((i) => i.href)).not.toContain("/settings");
+  });
+});
+
+describe("SSO email domain check", () => {
+  const domains = allowedEmailDomains("starelectric.ca");
+
+  it("allows company addresses, case-insensitively", () => {
+    expect(isAllowedEmail("dana@starelectric.ca", domains)).toBe(true);
+    expect(isAllowedEmail("Dana@StarElectric.CA", domains)).toBe(true);
+  });
+
+  it("rejects other domains and look-alikes", () => {
+    expect(isAllowedEmail("dana@gmail.com", domains)).toBe(false);
+    expect(isAllowedEmail("dana@evil-starelectric.ca", domains)).toBe(false);
+    expect(isAllowedEmail("dana@starelectric.ca.evil.com", domains)).toBe(false);
+    expect(isAllowedEmail("starelectric.ca", domains)).toBe(false);
+    expect(isAllowedEmail("@starelectric.ca", domains)).toBe(false);
+    expect(isAllowedEmail("", domains)).toBe(false);
+    expect(isAllowedEmail(undefined, domains)).toBe(false);
+  });
+
+  it("parses a comma-separated list", () => {
+    expect(allowedEmailDomains(" StarElectric.ca, @example.com ,")).toEqual(["starelectric.ca", "example.com"]);
   });
 });

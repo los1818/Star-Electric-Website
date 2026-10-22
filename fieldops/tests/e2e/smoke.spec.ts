@@ -63,3 +63,27 @@ test("administrator can edit a lookup table in Settings", async ({ page }) => {
   await page.getByRole("row").filter({ has: page.getByRole("textbox", { name: "Label for LOW" }) }).getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Saved")).toBeVisible();
 });
+
+test("a user awaiting access sees nothing until an administrator assigns a role", async ({ page, browser }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /^Nolan Newhire/ }).click();
+  await expect(page).toHaveURL(/\/pending$/);
+  await page.goto("/work-orders");
+  await expect(page).toHaveURL(/\/pending$/);
+
+  const admin = await (await browser.newContext()).newPage();
+  await loginAs(admin, "Alex Admin");
+  await admin.goto("/settings/users");
+  const row = admin.getByRole("row").filter({ hasText: "Nolan Newhire" });
+  await row.getByRole("combobox", { name: "Role for Nolan Newhire" }).selectOption("TECHNICIAN");
+  await row.getByRole("button", { name: "Save" }).click();
+  await expect(row.getByText("Saved")).toBeVisible();
+
+  await page.goto("/work-orders");
+  await expect(page.getByRole("heading", { level: 1, name: "Work Orders" })).toBeVisible();
+
+  // Put it back so reruns start from the seeded state.
+  await row.getByRole("combobox", { name: "Role for Nolan Newhire" }).selectOption("PENDING");
+  await row.getByRole("button", { name: "Save" }).click();
+  await expect(row.getByText("Saved")).toBeVisible();
+});

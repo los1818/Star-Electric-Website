@@ -1,13 +1,8 @@
 import Link from "next/link";
-import { signOut } from "@/auth";
 import { ROLE_LABELS, can } from "@/lib/auth/permissions";
 import type { CurrentUser } from "@/lib/auth/server";
 import { NEW_MENU_ITEMS } from "@/lib/nav";
-
-async function signOutAction() {
-  "use server";
-  await signOut({ redirectTo: "/login" });
-}
+import { signOutAction } from "@/server/actions/sign-out";
 
 export function TopBar({ user }: { user: CurrentUser }) {
   const newItems = NEW_MENU_ITEMS.filter((i) => can(user.role, i.permission));

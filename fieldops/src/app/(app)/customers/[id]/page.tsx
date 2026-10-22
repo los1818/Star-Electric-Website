@@ -27,6 +27,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         { label: "Billing address", value: [c.billingStreet, c.billingCity, c.billingProvince, c.billingPostal].filter(Boolean).join(", ") },
         { label: "Terms", value: c.paymentTerm?.label },
         { label: "Tax level", value: c.taxLevel?.label },
+        ...(c.taxExemptNumber ? [{ label: "Tax exemption no.", value: c.taxExemptNumber }] : []),
         { label: "Job sites / work orders", value: `${c._count.jobSites} / ${c._count.workOrders}` },
       ]}
     />

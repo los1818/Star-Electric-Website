@@ -1,13 +1,15 @@
 // Role → permission map. Pure (no Next/DB imports) so it can be unit-tested and used in
 // both server and client code. Enforcement lives in ./server.ts. See docs/SPEC.md §2.
 
-export const ROLES = ["ADMIN", "OFFICE", "TECHNICIAN"] as const;
+/** PENDING = signed in with company SSO, waiting for an administrator to assign a role. */
+export const ROLES = ["ADMIN", "OFFICE", "TECHNICIAN", "PENDING"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABELS: Record<Role, string> = {
   ADMIN: "Administrator",
   OFFICE: "Office",
   TECHNICIAN: "Technician",
+  PENDING: "Awaiting access",
 };
 
 export const PERMISSIONS = [
@@ -52,6 +54,8 @@ export const PERMISSIONS = [
   "vendors:write",
   "reports:operational",
   "reports:financial",
+  /** Costs, sell prices and rates anywhere in the app. Technicians never get this. */
+  "pricing:view",
   "settings:manage",
   "users:manage",
 ] as const;
@@ -91,8 +95,10 @@ const OFFICE: Permission[] = [
   "vendors:read",
   "vendors:write",
   "reports:operational",
+  "pricing:view",
 ];
 
+// Technicians see customer/site contact details through their assigned work orders, never prices.
 const TECHNICIAN: Permission[] = [
   "dashboard:view",
   "search:use",
@@ -108,6 +114,7 @@ export const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set(PERMISSIONS),
   OFFICE: new Set(OFFICE),
   TECHNICIAN: new Set(TECHNICIAN),
+  PENDING: new Set(),
 };
 
 export function isRole(value: unknown): value is Role {

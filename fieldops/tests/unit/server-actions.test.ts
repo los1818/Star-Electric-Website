@@ -7,7 +7,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("@/lib/db", () => ({
   db: {
-    user: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn(), update: vi.fn() },
     auditLog: { create: vi.fn() },
     customerCategory: { update: vi.fn() },
     recentItem: { deleteMany: vi.fn() },
@@ -18,10 +18,11 @@ const { auth } = await import("@/auth");
 const { db } = await import("@/lib/db");
 const { updateLookupRow } = await import("@/server/actions/settings");
 const { clearRecentItems } = await import("@/server/actions/recent");
+const { updateUserAccess } = await import("@/server/actions/users");
 
 type Mocked = ReturnType<typeof vi.fn>;
 
-function signInAs(user: { id: string; role: "ADMIN" | "OFFICE" | "TECHNICIAN"; active?: boolean } | null) {
+function signInAs(user: { id: string; role: "ADMIN" | "OFFICE" | "TECHNICIAN" | "PENDING"; active?: boolean } | null) {
   (auth as unknown as Mocked).mockResolvedValue(user ? { user: { id: user.id, role: user.role } } : null);
   (db.user.findUnique as unknown as Mocked).mockResolvedValue(
     user ? { id: user.id, name: "Test", email: "t@example.com", role: user.role, active: user.active ?? true, employeeId: null } : null,
@@ -93,5 +94,41 @@ describe("clearRecentItems (any signed-in user)", () => {
     signInAs(null);
     expect((await clearRecentItems({})).ok).toBe(false);
     expect(db.recentItem.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateUserAccess (users:manage)", () => {
+  const assign = { userId: "newbie", role: "TECHNICIAN" as const, active: true, employeeId: "emp1" };
+
+  beforeEach(() => {
+    (db.user.update as unknown as Mocked).mockResolvedValue({ id: "newbie", role: "TECHNICIAN", active: true, employeeId: "emp1" });
+  });
+
+  it("lets an administrator assign a role and links the employee", async () => {
+    signInAs({ id: "admin1", role: "ADMIN" });
+    expect((await updateUserAccess(assign)).ok).toBe(true);
+    expect(db.user.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "newbie" }, data: { role: "TECHNICIAN", active: true, employeeId: "emp1" } }));
+    expect(db.auditLog.create).toHaveBeenCalledOnce();
+  });
+
+  it.each(["OFFICE", "TECHNICIAN", "PENDING"] as const)("rejects %s", async (role) => {
+    signInAs({ id: "u9", role });
+    expect((await updateUserAccess(assign)).ok).toBe(false);
+    expect(db.user.update).not.toHaveBeenCalled();
+  });
+
+  it("stops administrators locking themselves out", async () => {
+    signInAs({ id: "admin1", role: "ADMIN" });
+    const demote = await updateUserAccess({ userId: "admin1", role: "OFFICE", active: true, employeeId: null });
+    expect(demote).toEqual({ ok: false, error: "You can't remove your own administrator access." });
+    const deactivate = await updateUserAccess({ userId: "admin1", role: "ADMIN", active: false, employeeId: null });
+    expect(deactivate.ok).toBe(false);
+    expect(db.user.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects unknown roles", async () => {
+    signInAs({ id: "admin1", role: "ADMIN" });
+    // @ts-expect-error: deliberately invalid role
+    expect((await updateUserAccess({ ...assign, role: "SUPERUSER" })).ok).toBe(false);
   });
 });

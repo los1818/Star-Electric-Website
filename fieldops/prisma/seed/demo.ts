@@ -78,6 +78,8 @@ const USERS: { email: string; name: string; role: Role; employeeIndex?: number }
   { email: "office@star-electric.example", name: "Olivia Office", role: "OFFICE" },
   { email: "tech@star-electric.example", name: "Marcus Lindqvist", role: "TECHNICIAN", employeeIndex: 1 },
   { email: "tech2@star-electric.example", name: "Jasmine Okafor", role: "TECHNICIAN", employeeIndex: 6 },
+  // Signed in with SSO for the first time; waiting for an administrator to assign a role.
+  { email: "new.hire@star-electric.example", name: "Nolan Newhire", role: "PENDING" },
 ];
 
 // [sku, description, category, unit, cost cents, price cents]
@@ -205,7 +207,9 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
         billingProvince: "SK",
         billingPostal: postal(i),
         paymentTermId: terms.get(c.term),
-        taxLevelId: taxLevels.get("GST_PST"),
+        // One tax-exempt customer, with its exemption number on file.
+        taxLevelId: taxLevels.get(i === 10 ? "EXEMPT" : "GST_PST"),
+        taxExemptNumber: i === 10 ? "EXEMPT-DEMO-0001" : null,
         creditHold: i === 3,
         contacts: {
           create: [

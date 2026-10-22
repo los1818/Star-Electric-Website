@@ -33,6 +33,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 export async function requirePageAccess(...permissions: Permission[]): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (user.role === "PENDING") redirect("/pending");
   if (permissions.length > 0 && !canAny(user.role, permissions)) redirect("/forbidden");
   return user;
 }

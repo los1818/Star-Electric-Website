@@ -19,7 +19,9 @@ datasource db {
 // Enums (code-level only, not user-editable)
 // ---------------------------------------------------------------------------
 
+/// PENDING: signed in with company SSO but no role assigned yet (no access).
 enum Role {
+  PENDING
   ADMIN
   OFFICE
   TECHNICIAN
@@ -62,7 +64,7 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
-  role          Role      @default(TECHNICIAN)
+  role          Role      @default(PENDING)
   active        Boolean   @default(true)
   employeeId    String?   @unique
   employee      Employee? @relation(fields: [employeeId], references: [id])
@@ -402,6 +404,8 @@ model Customer {
   paymentTerm     PaymentTerm?     @relation(fields: [paymentTermId], references: [id])
   taxLevelId      String?
   taxLevel        TaxLevel?        @relation(fields: [taxLevelId], references: [id])
+  /// PST/GST exemption certificate or licence number, kept on file for exempt customers.
+  taxExemptNumber String?
   creditHold      Boolean          @default(false)
   notes           String?          @db.Text
   active          Boolean          @default(true)

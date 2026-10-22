@@ -5,16 +5,22 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { authConfig, devLoginEnabled, entraConfigured } from "@/lib/auth/config";
+import { allowedEmailDomains, authConfig, devLoginEnabled, entraConfigured, isAllowedEmail } from "@/lib/auth/config";
 
 const providers: Provider[] = [];
 
 if (entraConfigured) {
   providers.push(
     MicrosoftEntraID({
-      // Our own single tenant issues the email, so linking to the pre-created user by
-      // email is safe. Users must exist (created by an administrator) to sign in.
+      // Our own single tenant issues the email, so linking to a user an administrator
+      // already created with that email is safe.
       allowDangerousEmailAccountLinking: true,
+      // Entra often omits the optional `email` claim; fall back to the sign-in name. Skip the
+      // default profile-photo fetch, which would store a base64 image in the database.
+      profile(profile) {
+        const email = (profile.email ?? profile.preferred_username ?? "").toLowerCase();
+        return { id: profile.sub, name: profile.name, email, image: null };
+      },
     }),
   );
 }
@@ -44,10 +50,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
     async signIn({ user, account }) {
       if (account?.provider === "dev-login") return true;
-      // SSO: only users an administrator has already created (and left active) may sign in.
-      if (!user.email) return false;
-      const existing = await db.user.findUnique({ where: { email: user.email.toLowerCase() } });
-      return Boolean(existing?.active);
+      // SSO: company email domains only. First-time users are created with the PENDING role
+      // (no access) until an administrator assigns one. Deactivated users are refused.
+      const email = user.email?.toLowerCase();
+      if (!isAllowedEmail(email, allowedEmailDomains())) return false;
+      const existing = await db.user.findUnique({ where: { email } });
+      return existing ? existing.active : true;
     },
   },
 });

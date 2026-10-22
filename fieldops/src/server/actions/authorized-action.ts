@@ -3,6 +3,9 @@ import { z } from "zod";
 import { ForbiddenError, type Permission } from "@/lib/auth/permissions";
 import { requireAuthenticated, requirePermission, type CurrentUser } from "@/lib/auth/server";
 
+/** Throw from a handler to return a message to the user instead of a generic failure. */
+export class ActionError extends Error {}
+
 export type ActionResult<T = void> = { ok: true; data: T } | { ok: false; error: string };
 
 /**
@@ -26,6 +29,7 @@ export function authorizedAction<S extends z.ZodTypeAny, T>(
       if (error instanceof ForbiddenError) {
         return { ok: false, error: "You don't have permission to do that." };
       }
+      if (error instanceof ActionError) return { ok: false, error: error.message };
       throw error;
     }
   };

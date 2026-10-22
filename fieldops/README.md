@@ -29,6 +29,7 @@ Sign in on the login page with the **Development login** buttons:
 | office@star-electric.example | Office |
 | tech@star-electric.example | Technician (Marcus Lindqvist) |
 | tech2@star-electric.example | Technician (Jasmine Okafor) |
+| new.hire@star-electric.example | Awaiting access (shows the pending screen) |
 
 The dev login only exists when `NODE_ENV` isn't `production` **and** `AUTH_DEV_LOGIN=true`.
 
@@ -40,8 +41,11 @@ The dev login only exists when `NODE_ENV` isn't `production` **and** `AUTH_DEV_L
 3. Certificates & secrets → New client secret.
 4. Set `AUTH_MICROSOFT_ENTRA_ID_ID` (Application ID), `AUTH_MICROSOFT_ENTRA_ID_SECRET`, and
    `AUTH_MICROSOFT_ENTRA_ID_ISSUER=https://login.microsoftonline.com/<tenant-id>/v2.0` in `.env`.
+5. Create the first administrator: `npm run user:create -- --email you@starelectric.ca --name "Your Name" --role ADMIN`
 
-Only users that already exist in FieldOps (matched by email, and active) can sign in with Microsoft.
+Anyone with an `@starelectric.ca` account (`AUTH_ALLOWED_EMAIL_DOMAINS`) can then sign in. New people land on an
+"awaiting access" screen until an administrator assigns their role in **Settings → Users** (and links technicians
+to their employee record).
 
 ## Tests
 
