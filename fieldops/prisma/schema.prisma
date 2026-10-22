@@ -1,0 +1,1021 @@
+// Star FieldOps: database schema.
+//
+// Conventions (see docs/SPEC.md §4):
+// - Money is integer cents (Int). Tax and multiplier rates are basis points (5% = 500).
+// - Hours are integer hundredths (7.5 h = 750). Quantities are Decimal(12,3).
+// - User-editable lists (statuses, categories, types...) are lookup tables with a stable
+//   `code`, never Prisma enums. Enums are used only for values the code itself branches on.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums (code-level only, not user-editable)
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  OFFICE
+  TECHNICIAN
+}
+
+/// What a quote/invoice/PO line represents. Drives how it is priced and costed.
+enum LineKind {
+  LABOR
+  MATERIAL
+  EQUIPMENT
+  SUBCONTRACT
+  OTHER
+}
+
+enum DiscountType {
+  NONE
+  PERCENT
+  AMOUNT
+}
+
+enum InventoryLocationKind {
+  WAREHOUSE
+  TRUCK
+}
+
+enum ImportRowStatus {
+  PENDING
+  MAPPED
+  SKIPPED
+  ERROR
+}
+
+// ---------------------------------------------------------------------------
+// Auth.js
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(TECHNICIAN)
+  active        Boolean   @default(true)
+  employeeId    String?   @unique
+  employee      Employee? @relation(fields: [employeeId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  recentItems  RecentItem[]
+  auditLogs    AuditLog[]
+  notes        WorkOrderNote[]
+  attachments  Attachment[]
+  approvedTime TimeEntry[]     @relation("TimeEntryApprovedBy")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Company settings
+// ---------------------------------------------------------------------------
+
+model CompanySetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+/// Document numbering. `code` is WORK_ORDER, QUOTE, INVOICE, PURCHASE_ORDER.
+model Sequence {
+  code      String   @id
+  prefix    String
+  nextValue Int
+  padding   Int      @default(6)
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Lookup tables (seeded, editable in Settings)
+// ---------------------------------------------------------------------------
+
+model CustomerCategory {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  label     String
+  sortOrder Int        @default(0)
+  active    Boolean    @default(true)
+  color     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  customers Customer[]
+}
+
+model WorkOrderType {
+  id         String      @id @default(cuid())
+  code       String      @unique
+  label      String
+  sortOrder  Int         @default(0)
+  active     Boolean     @default(true)
+  color      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  workOrders WorkOrder[]
+}
+
+model WorkOrderStatus {
+  id              String                      @id @default(cuid())
+  code            String                      @unique
+  label           String
+  sortOrder       Int                         @default(0)
+  active          Boolean                     @default(true)
+  color           String?
+  /// Closed statuses drop off open-work lists.
+  isClosed        Boolean                     @default(false)
+  /// Work orders in a billable status can be pulled onto an invoice.
+  isBillable      Boolean                     @default(false)
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+  workOrders      WorkOrder[]
+  transitionsFrom WorkOrderStatusTransition[] @relation("TransitionFrom")
+  transitionsTo   WorkOrderStatusTransition[] @relation("TransitionTo")
+}
+
+model WorkOrderStatusTransition {
+  id     String          @id @default(cuid())
+  fromId String
+  toId   String
+  from   WorkOrderStatus @relation("TransitionFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to     WorkOrderStatus @relation("TransitionTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId])
+}
+
+model Priority {
+  id         String      @id @default(cuid())
+  code       String      @unique
+  label      String
+  sortOrder  Int         @default(0)
+  active     Boolean     @default(true)
+  color      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  workOrders WorkOrder[]
+}
+
+model QuoteStatus {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quotes    Quote[]
+}
+
+model InvoiceStatus {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  label     String
+  sortOrder Int       @default(0)
+  active    Boolean   @default(true)
+  color     String?
+  /// Posted invoices are immutable (void or credit to correct).
+  isPosted  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  invoices  Invoice[]
+}
+
+model PurchaseOrderStatus {
+  id             String          @id @default(cuid())
+  code           String          @unique
+  label          String
+  sortOrder      Int             @default(0)
+  active         Boolean         @default(true)
+  color          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  purchaseOrders PurchaseOrder[]
+}
+
+model TimesheetItemType {
+  id           String      @id @default(cuid())
+  code         String      @unique
+  label        String
+  sortOrder    Int         @default(0)
+  active       Boolean     @default(true)
+  color        String?
+  /// Pay/bill multiplier in basis points (1.5x = 15000).
+  multiplierBp Int         @default(10000)
+  billable     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  timeEntries  TimeEntry[]
+}
+
+/// One tax, e.g. GST 5% or PST 6%.
+model TaxComponent {
+  id           String              @id @default(cuid())
+  code         String              @unique
+  label        String
+  rateBp       Int
+  registration String?
+  sortOrder    Int                 @default(0)
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  levels       TaxLevelComponent[]
+}
+
+/// A named combination of tax components, e.g. "GST + PST", "GST only", "Exempt".
+model TaxLevel {
+  id         String              @id @default(cuid())
+  code       String              @unique
+  label      String
+  sortOrder  Int                 @default(0)
+  active     Boolean             @default(true)
+  isDefault  Boolean             @default(false)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  components TaxLevelComponent[]
+
+  customers      Customer[]
+  jobSites       JobSite[]
+  workOrders     WorkOrder[]
+  quotes         Quote[]
+  quoteLines     QuoteLine[]
+  invoices       Invoice[]
+  invoiceLines   InvoiceLine[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model TaxLevelComponent {
+  taxLevelId     String
+  taxComponentId String
+  taxLevel       TaxLevel     @relation(fields: [taxLevelId], references: [id], onDelete: Cascade)
+  taxComponent   TaxComponent @relation(fields: [taxComponentId], references: [id], onDelete: Cascade)
+
+  @@id([taxLevelId, taxComponentId])
+}
+
+model PaymentTerm {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  label     String
+  days      Int        @default(0)
+  sortOrder Int        @default(0)
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  customers Customer[]
+  invoices  Invoice[]
+}
+
+model PaymentMethod {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  label     String
+  sortOrder Int       @default(0)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  payments  Payment[]
+}
+
+model UnitOfMeasure {
+  id        String          @id @default(cuid())
+  code      String          @unique
+  label     String
+  sortOrder Int             @default(0)
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  items     InventoryItem[]
+}
+
+model InventoryCategory {
+  id        String          @id @default(cuid())
+  code      String          @unique
+  label     String
+  sortOrder Int             @default(0)
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  items     InventoryItem[]
+}
+
+model Trade {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  label     String
+  sortOrder Int        @default(0)
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  employees Employee[]
+}
+
+model LaborRate {
+  id           String        @id @default(cuid())
+  code         String        @unique
+  label        String
+  costCents    Int
+  sellCents    Int
+  sortOrder    Int           @default(0)
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  employees    Employee[]
+  timeEntries  TimeEntry[]
+  quoteLines   QuoteLine[]
+  invoiceLines InvoiceLine[]
+}
+
+model EquipmentType {
+  id        String      @id @default(cuid())
+  code      String      @unique
+  label     String
+  sortOrder Int         @default(0)
+  active    Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  equipment Equipment[]
+}
+
+// ---------------------------------------------------------------------------
+// Customers, sites, people
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id              String           @id @default(cuid())
+  accountNumber   String           @unique
+  name            String
+  categoryId      String
+  category        CustomerCategory @relation(fields: [categoryId], references: [id])
+  phone           String?
+  email           String?
+  website         String?
+  billingStreet   String?
+  billingCity     String?
+  billingProvince String?
+  billingPostal   String?
+  paymentTermId   String?
+  paymentTerm     PaymentTerm?     @relation(fields: [paymentTermId], references: [id])
+  taxLevelId      String?
+  taxLevel        TaxLevel?        @relation(fields: [taxLevelId], references: [id])
+  creditHold      Boolean          @default(false)
+  notes           String?          @db.Text
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  contacts          Contact[]
+  jobSites          JobSite[]
+  workOrders        WorkOrder[]
+  quotes            Quote[]
+  invoices          Invoice[]
+  serviceAgreements ServiceAgreement[]
+
+  @@index([name])
+}
+
+model Contact {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  jobSiteId  String?
+  jobSite    JobSite? @relation(fields: [jobSiteId], references: [id], onDelete: SetNull)
+  firstName  String
+  lastName   String
+  title      String?
+  phone      String?
+  mobile     String?
+  email      String?
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  workOrders WorkOrder[]
+}
+
+model JobSite {
+  id          String    @id @default(cuid())
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id])
+  name        String
+  street      String
+  city        String    @default("Regina")
+  province    String    @default("SK")
+  postal      String?
+  latitude    Decimal?  @db.Decimal(9, 6)
+  longitude   Decimal?  @db.Decimal(9, 6)
+  accessNotes String?   @db.Text
+  taxLevelId  String?
+  taxLevel    TaxLevel? @relation(fields: [taxLevelId], references: [id])
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  contacts          Contact[]
+  workOrders        WorkOrder[]
+  quotes            Quote[]
+  invoices          Invoice[]
+  equipment         Equipment[]
+  serviceAgreements ServiceAgreementSite[]
+
+  @@index([customerId])
+}
+
+model Employee {
+  id             String     @id @default(cuid())
+  employeeNumber String     @unique
+  firstName      String
+  lastName       String
+  tradeId        String?
+  trade          Trade?     @relation(fields: [tradeId], references: [id])
+  laborRateId    String?
+  laborRate      LaborRate? @relation(fields: [laborRateId], references: [id])
+  phone          String?
+  email          String?
+  hireDate       DateTime?  @db.Date
+  active         Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user        User?
+  assignments WorkOrderAssignment[]
+  timeEntries TimeEntry[]
+  truck       InventoryLocation?
+}
+
+model Vendor {
+  id             String          @id @default(cuid())
+  name           String
+  accountNumber  String?
+  contactName    String?
+  phone          String?
+  email          String?
+  street         String?
+  city           String?
+  province       String?
+  postal         String?
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  purchaseOrders PurchaseOrder[]
+}
+
+// ---------------------------------------------------------------------------
+// Work orders
+// ---------------------------------------------------------------------------
+
+model WorkOrder {
+  id                 String            @id @default(cuid())
+  number             String            @unique
+  customerId         String
+  customer           Customer          @relation(fields: [customerId], references: [id])
+  jobSiteId          String
+  jobSite            JobSite           @relation(fields: [jobSiteId], references: [id])
+  contactId          String?
+  contact            Contact?          @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  typeId             String
+  type               WorkOrderType     @relation(fields: [typeId], references: [id])
+  statusId           String
+  status             WorkOrderStatus   @relation(fields: [statusId], references: [id])
+  priorityId         String
+  priority           Priority          @relation(fields: [priorityId], references: [id])
+  taxLevelId         String?
+  taxLevel           TaxLevel?         @relation(fields: [taxLevelId], references: [id])
+  summary            String
+  description        String?           @db.Text
+  customerPoNumber   String?
+  notToExceedCents   Int?
+  requestedAt        DateTime          @default(now())
+  scheduledStart     DateTime?
+  scheduledEnd       DateTime?
+  completedAt        DateTime?
+  quoteId            String?           @unique
+  quote              Quote?            @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  serviceAgreementId String?
+  serviceAgreement   ServiceAgreement? @relation(fields: [serviceAgreementId], references: [id], onDelete: SetNull)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  assignments    WorkOrderAssignment[]
+  notes          WorkOrderNote[]
+  timeEntries    TimeEntry[]
+  materials      MaterialUsage[]
+  invoices       InvoiceWorkOrder[]
+  purchaseOrders PurchaseOrder[]
+  equipment      WorkOrderEquipment[]
+
+  @@index([statusId])
+  @@index([customerId])
+  @@index([jobSiteId])
+}
+
+model WorkOrderAssignment {
+  workOrderId String
+  employeeId  String
+  isLead      Boolean   @default(false)
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@id([workOrderId, employeeId])
+}
+
+model WorkOrderNote {
+  id              String    @id @default(cuid())
+  workOrderId     String
+  workOrder       WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          User      @relation(fields: [authorId], references: [id])
+  body            String    @db.Text
+  customerVisible Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model WorkOrderEquipment {
+  workOrderId String
+  equipmentId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@id([workOrderId, equipmentId])
+}
+
+// ---------------------------------------------------------------------------
+// Time and materials
+// ---------------------------------------------------------------------------
+
+model TimeEntry {
+  id              String            @id @default(cuid())
+  employeeId      String
+  employee        Employee          @relation(fields: [employeeId], references: [id])
+  workOrderId     String?
+  workOrder       WorkOrder?        @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  date            DateTime          @db.Date
+  itemTypeId      String
+  itemType        TimesheetItemType @relation(fields: [itemTypeId], references: [id])
+  laborRateId     String?
+  laborRate       LaborRate?        @relation(fields: [laborRateId], references: [id])
+  /// Hours in hundredths (7.5 h = 750).
+  hoursHundredths Int
+  description     String?
+  approvedById    String?
+  approvedBy      User?             @relation("TimeEntryApprovedBy", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  invoiceLineId   String?
+  invoiceLine     InvoiceLine?      @relation(fields: [invoiceLineId], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([employeeId, date])
+  @@index([workOrderId])
+}
+
+model MaterialUsage {
+  id             String             @id @default(cuid())
+  workOrderId    String
+  workOrder      WorkOrder          @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  itemId         String?
+  item           InventoryItem?     @relation(fields: [itemId], references: [id])
+  locationId     String?
+  location       InventoryLocation? @relation(fields: [locationId], references: [id])
+  description    String
+  quantity       Decimal            @db.Decimal(12, 3)
+  unitCostCents  Int
+  unitPriceCents Int
+  usedAt         DateTime           @default(now())
+  invoiceLineId  String?
+  invoiceLine    InvoiceLine?       @relation(fields: [invoiceLineId], references: [id], onDelete: SetNull)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Quotes and invoices
+// ---------------------------------------------------------------------------
+
+model Quote {
+  id            String       @id @default(cuid())
+  number        String       @unique
+  customerId    String
+  customer      Customer     @relation(fields: [customerId], references: [id])
+  jobSiteId     String?
+  jobSite       JobSite?     @relation(fields: [jobSiteId], references: [id])
+  statusId      String
+  status        QuoteStatus  @relation(fields: [statusId], references: [id])
+  taxLevelId    String?
+  taxLevel      TaxLevel?    @relation(fields: [taxLevelId], references: [id])
+  title         String
+  scope         String?      @db.Text
+  exclusions    String?      @db.Text
+  issuedAt      DateTime?
+  validUntil    DateTime?    @db.Date
+  discountType  DiscountType @default(NONE)
+  /// Basis points for PERCENT, cents for AMOUNT.
+  discountValue Int          @default(0)
+  subtotalCents Int          @default(0)
+  discountCents Int          @default(0)
+  taxCents      Int          @default(0)
+  totalCents    Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  lines     QuoteLine[]
+  workOrder WorkOrder?
+}
+
+model QuoteLine {
+  id             String         @id @default(cuid())
+  quoteId        String
+  quote          Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  sortOrder      Int            @default(0)
+  kind           LineKind
+  itemId         String?
+  item           InventoryItem? @relation(fields: [itemId], references: [id])
+  laborRateId    String?
+  laborRate      LaborRate?     @relation(fields: [laborRateId], references: [id])
+  description    String
+  quantity       Decimal        @db.Decimal(12, 3)
+  unitCostCents  Int            @default(0)
+  unitPriceCents Int
+  /// Overrides the quote's tax level for this line (e.g. labour GST-only).
+  taxLevelId     String?
+  taxLevel       TaxLevel?      @relation(fields: [taxLevelId], references: [id])
+  amountCents    Int
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  number           String        @unique
+  customerId       String
+  customer         Customer      @relation(fields: [customerId], references: [id])
+  jobSiteId        String?
+  jobSite          JobSite?      @relation(fields: [jobSiteId], references: [id])
+  statusId         String
+  status           InvoiceStatus @relation(fields: [statusId], references: [id])
+  paymentTermId    String?
+  paymentTerm      PaymentTerm?  @relation(fields: [paymentTermId], references: [id])
+  taxLevelId       String?
+  taxLevel         TaxLevel?     @relation(fields: [taxLevelId], references: [id])
+  customerPoNumber String?
+  invoiceDate      DateTime      @db.Date
+  dueDate          DateTime?     @db.Date
+  postedAt         DateTime?
+  voidedAt         DateTime?
+  /// Set on a credit note: the invoice it credits.
+  creditForId      String?
+  creditFor        Invoice?      @relation("CreditNotes", fields: [creditForId], references: [id])
+  creditNotes      Invoice[]     @relation("CreditNotes")
+  discountType     DiscountType  @default(NONE)
+  discountValue    Int           @default(0)
+  subtotalCents    Int           @default(0)
+  discountCents    Int           @default(0)
+  taxCents         Int           @default(0)
+  totalCents       Int           @default(0)
+  paidCents        Int           @default(0)
+  notes            String?       @db.Text
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  lines      InvoiceLine[]
+  taxes      InvoiceTax[]
+  payments   Payment[]
+  workOrders InvoiceWorkOrder[]
+
+  @@index([customerId])
+  @@index([statusId])
+}
+
+model InvoiceLine {
+  id             String         @id @default(cuid())
+  invoiceId      String
+  invoice        Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  sortOrder      Int            @default(0)
+  kind           LineKind
+  itemId         String?
+  item           InventoryItem? @relation(fields: [itemId], references: [id])
+  laborRateId    String?
+  laborRate      LaborRate?     @relation(fields: [laborRateId], references: [id])
+  description    String
+  quantity       Decimal        @db.Decimal(12, 3)
+  unitCostCents  Int            @default(0)
+  unitPriceCents Int
+  taxLevelId     String?
+  taxLevel       TaxLevel?      @relation(fields: [taxLevelId], references: [id])
+  amountCents    Int
+
+  timeEntries TimeEntry[]
+  materials   MaterialUsage[]
+}
+
+/// Tax breakdown snapshot per component, frozen when the invoice is posted.
+model InvoiceTax {
+  id           String  @id @default(cuid())
+  invoiceId    String
+  invoice      Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  code         String
+  label        String
+  rateBp       Int
+  taxableCents Int
+  taxCents     Int
+
+  @@unique([invoiceId, code])
+}
+
+model InvoiceWorkOrder {
+  invoiceId   String
+  workOrderId String
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+
+  @@id([invoiceId, workOrderId])
+}
+
+model Payment {
+  id          String         @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice        @relation(fields: [invoiceId], references: [id])
+  paidAt      DateTime       @db.Date
+  amountCents Int
+  methodId    String?
+  method      PaymentMethod? @relation(fields: [methodId], references: [id])
+  reference   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Inventory and purchasing
+// ---------------------------------------------------------------------------
+
+model InventoryItem {
+  id           String             @id @default(cuid())
+  sku          String             @unique
+  description  String
+  categoryId   String?
+  category     InventoryCategory? @relation(fields: [categoryId], references: [id])
+  unitId       String?
+  unit         UnitOfMeasure?     @relation(fields: [unitId], references: [id])
+  manufacturer String?
+  partNumber   String?
+  costCents    Int
+  priceCents   Int
+  reorderPoint Decimal?           @db.Decimal(12, 3)
+  active       Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  stock        StockLevel[]
+  materials    MaterialUsage[]
+  quoteLines   QuoteLine[]
+  invoiceLines InvoiceLine[]
+  poLines      PurchaseOrderLine[]
+
+  @@index([description])
+}
+
+model InventoryLocation {
+  id         String                @id @default(cuid())
+  code       String                @unique
+  name       String
+  kind       InventoryLocationKind
+  employeeId String?               @unique
+  employee   Employee?             @relation(fields: [employeeId], references: [id])
+  active     Boolean               @default(true)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  stock      StockLevel[]
+  materials  MaterialUsage[]
+  poReceipts PurchaseOrder[]
+}
+
+model StockLevel {
+  itemId     String
+  locationId String
+  item       InventoryItem     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  location   InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  quantity   Decimal           @db.Decimal(12, 3)
+  updatedAt  DateTime          @updatedAt
+
+  @@id([itemId, locationId])
+}
+
+model PurchaseOrder {
+  id               String              @id @default(cuid())
+  number           String              @unique
+  vendorId         String
+  vendor           Vendor              @relation(fields: [vendorId], references: [id])
+  statusId         String
+  status           PurchaseOrderStatus @relation(fields: [statusId], references: [id])
+  workOrderId      String?
+  workOrder        WorkOrder?          @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  shipToLocationId String?
+  shipToLocation   InventoryLocation?  @relation(fields: [shipToLocationId], references: [id])
+  taxLevelId       String?
+  taxLevel         TaxLevel?           @relation(fields: [taxLevelId], references: [id])
+  orderedAt        DateTime?
+  expectedAt       DateTime?           @db.Date
+  notes            String?             @db.Text
+  subtotalCents    Int                 @default(0)
+  taxCents         Int                 @default(0)
+  totalCents       Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  lines PurchaseOrderLine[]
+}
+
+model PurchaseOrderLine {
+  id              String         @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  sortOrder       Int            @default(0)
+  itemId          String?
+  item            InventoryItem? @relation(fields: [itemId], references: [id])
+  description     String
+  quantity        Decimal        @db.Decimal(12, 3)
+  receivedQty     Decimal        @default(0) @db.Decimal(12, 3)
+  unitCostCents   Int
+  amountCents     Int
+}
+
+// ---------------------------------------------------------------------------
+// Equipment and service agreements
+// ---------------------------------------------------------------------------
+
+model Equipment {
+  id           String        @id @default(cuid())
+  jobSiteId    String
+  jobSite      JobSite       @relation(fields: [jobSiteId], references: [id])
+  typeId       String
+  type         EquipmentType @relation(fields: [typeId], references: [id])
+  name         String
+  manufacturer String?
+  model        String?
+  serialNumber String?
+  voltage      String?
+  amperage     String?
+  kva          String?
+  location     String?
+  installedAt  DateTime?     @db.Date
+  notes        String?       @db.Text
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  workOrders WorkOrderEquipment[]
+}
+
+model ServiceAgreement {
+  id              String    @id @default(cuid())
+  number          String    @unique
+  customerId      String
+  customer        Customer  @relation(fields: [customerId], references: [id])
+  name            String
+  startDate       DateTime  @db.Date
+  endDate         DateTime? @db.Date
+  /// Months between generated work orders.
+  frequencyMonths Int       @default(12)
+  nextDueDate     DateTime? @db.Date
+  priceCents      Int       @default(0)
+  workSummary     String?   @db.Text
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sites      ServiceAgreementSite[]
+  workOrders WorkOrder[]
+}
+
+model ServiceAgreementSite {
+  serviceAgreementId String
+  jobSiteId          String
+  serviceAgreement   ServiceAgreement @relation(fields: [serviceAgreementId], references: [id], onDelete: Cascade)
+  jobSite            JobSite          @relation(fields: [jobSiteId], references: [id], onDelete: Cascade)
+
+  @@id([serviceAgreementId, jobSiteId])
+}
+
+// ---------------------------------------------------------------------------
+// Cross-cutting
+// ---------------------------------------------------------------------------
+
+/// Polymorphic file attachment (photo, PDF, signature).
+model Attachment {
+  id           String   @id @default(cuid())
+  entityType   String
+  entityId     String
+  fileName     String
+  contentType  String
+  sizeBytes    Int
+  storageKey   String
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String
+  diff       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+model RecentItem {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityType String
+  entityId   String
+  label      String
+  href       String
+  viewedAt   DateTime @default(now())
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, viewedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Trimble T&M Billing migration staging
+// ---------------------------------------------------------------------------
+
+model ImportBatch {
+  id         String          @id @default(cuid())
+  source     String
+  dryRun     Boolean         @default(true)
+  startedAt  DateTime        @default(now())
+  finishedAt DateTime?
+  summary    Json?
+  rows       StgTrimbleRow[]
+}
+
+/// One raw row from a Trimble SQL Server table, kept verbatim as JSON until mapped.
+model StgTrimbleRow {
+  id           String          @id @default(cuid())
+  batchId      String
+  batch        ImportBatch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  sourceTable  String
+  sourceKey    String
+  data         Json
+  status       ImportRowStatus @default(PENDING)
+  mappedEntity String?
+  mappedId     String?
+  error        String?
+  createdAt    DateTime        @default(now())
+
+  @@unique([batchId, sourceTable, sourceKey])
+  @@index([sourceTable, status])
+}
