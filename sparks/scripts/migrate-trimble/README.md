@@ -45,9 +45,14 @@ npx tsx scripts/migrate-trimble/index.ts --stage --tables dbo.Customer,dbo.Job
 npm run trimble:dry-run -- --fixture scripts/migrate-trimble/fixture.example.json --tables dbo.Customer,dbo.Job
 ```
 
+## Scope (confirmed)
+
+All Trimble history: customers, jobs (open and closed), current projects. Inventory comes from the
+Accubid export instead (`scripts/import-accubid-inventory`). Mapped records get a `legacyRef` like
+`trimble:dbo.Customer:1042` (source table + primary key), so re-running the mapping updates instead of
+duplicating.
+
 ## Still to do (needs input from Star Electric)
 
 - The Trimble table list and which tables matter (output of `--discover` is perfect).
-- Which years of history to bring over (all, or e.g. the last 7 for CRA record keeping).
 - How Trimble customers/jobs line up with ServiceBox customers, so we don't create duplicates.
-- Whether historical invoices come over as read-only records or only as summary totals.

@@ -1,6 +1,6 @@
 # Sparks — Specification
 
-**Status: DRAFT v0.6, written by Claude because no SPEC.md was supplied.**
+**Status: DRAFT v0.7, written by Claude because no SPEC.md was supplied.**
 It is modelled on ServiceBox and adjusted for commercial electrical contracting. Anything marked
 **[ASSUMPTION]** needs confirmation from Star Electric before the phase that depends on it.
 
@@ -157,13 +157,33 @@ Cancelled from any open state. Allowed transitions are stored with the status ta
 - Invoices can be built from one or more completed WOs (time + materials) or entered manually.
 - Posted invoices are immutable; corrections are made by voiding or with a credit note.
 
-## 6. Integrations (later phases)
+## 6. Data migration from Trimble (confirmed scope)
+
+**Bring over all Trimble history**: customers, jobs (closed and open), current projects, and inventory.
+No cut-off date.
+
+- **Inventory**: from the Accubid export (`npm run inventory:import`), already working.
+- **Customers, jobs, current projects, history**: from the Trimble T&M Billing SQL Server via
+  `scripts/migrate-trimble` (extract → stage → map). Mapping is written once the table list is known.
+- Every migrated record keeps a `legacyRef` (e.g. `trimble:dbo.Customer:1042`), unique per table, so:
+  the import can be re-run to pick up changes without duplicates; any record can be traced to its source.
+- Historical invoices keep their Trimble numbers and come over as **posted** (read-only). Sparks numbering
+  (INV-000001…) is separate and starts at 1.
+- Closed jobs come over as Closed work orders with their time, materials and invoices for history and
+  reporting. Open jobs and current projects come over as live work orders.
+- A dry run and a reconciliation report (counts and dollar totals per table vs Trimble) are required
+  before go-live; the final import runs at cut-over.
+- **[OPEN: Does ServiceBox hold anything Trimble doesn't (e.g. service calls, equipment, contacts)?]**
+- **[OPEN: How do current projects work in Trimble: contract value, change orders, progress billing,
+  holdback? This decides whether Sparks needs a Project record above work orders.]**
+
+## 7. Integrations (later phases)
 - Microsoft Entra ID SSO (Phase 0)
 - Accounting export (QuickBooks/Sage?) **[OPEN: which accounting package?]**
 - Trimble T&M Billing data migration from SQL Server (stub in Phase 0, real mapping later)
 - ServiceBox data import (CSV export)
 
-## 7. Phased plan
+## 8. Phased plan
 - **Phase 0: Foundation.** Scaffold, full schema, auth + roles, app shell, seed data, lookup
   tables, Trimble ETL stub, tests.
 - **Phase 1: Core records.** Customers, contacts, job sites, employees, vendors; Settings UI for lookups; global search; recent items;
@@ -174,7 +194,7 @@ Cancelled from any open state. Allowed transitions are stored with the status ta
 - **Phase 5: Equipment and service agreements.** Recurring WO generation.
 - **Phase 6: Reports, accounting export, data migration** (Trimble + ServiceBox), go-live.
 
-## 8. Decision log
+## 9. Decision log
 | Date | Decision |
 |---|---|
 | 2026-10-22 | App lives in `sparks/` in the `star-electric-website` repo (couldn't create a separate repo from this session). |
@@ -191,4 +211,5 @@ Cancelled from any open state. Allowed transitions are stored with the status ta
 | 2026-10-22 | Inventory and material pricing modelled on Trimble Accubid (E/C/M price units, trade price, discount, labour units). |
 | 2026-10-22 | No stored sell price on materials: markup is set per quote/invoice (varies with job size and cost changes). |
 | 2026-10-22 | Sparks suggests a starting markup from editable tiers by job material cost; users can always override. |
+| 2026-10-22 | Migrate all Trimble history (customers, jobs, current projects, inventory); records keep a `legacyRef`. |
 | 2026-10-22 | App renamed from "Star FieldOps" to **Sparks**; folder `fieldops/` → `sparks/`. |

@@ -6,7 +6,7 @@ export interface NavItem {
   icon: string;
   /** Visible if the user holds any of these. */
   permissions: Permission[];
-  /** Phase in docs/SPEC.md §7 that builds the module. */
+  /** Phase in docs/SPEC.md §8 that builds the module. */
   phase: number;
   description: string;
 }

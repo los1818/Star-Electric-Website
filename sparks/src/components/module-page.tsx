@@ -32,7 +32,7 @@ export async function ModulePage({ href, stats }: { href: string; stats?: (user:
       )}
 
       <p className="mt-6 rounded border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-600">
-        This module is a placeholder. It&apos;s built in <strong>Phase {item.phase}</strong> (see docs/SPEC.md §7).
+        This module is a placeholder. It&apos;s built in <strong>Phase {item.phase}</strong> (see docs/SPEC.md §8).
       </p>
     </div>
   );
