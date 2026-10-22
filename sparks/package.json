@@ -18,7 +18,8 @@
     "db:reset": "prisma migrate reset --force",
     "db:studio": "prisma studio",
     "trimble:dry-run": "tsx scripts/migrate-trimble/index.ts --dry-run",
-    "user:create": "tsx scripts/create-user.ts"
+    "user:create": "tsx scripts/create-user.ts",
+    "inventory:import": "tsx scripts/import-accubid-inventory/index.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -44,6 +45,7 @@
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^15.5.28",
+    "exceljs": "^4.4.0",
     "mssql": "^12.7.11",
     "prisma": "^6.19.3",
     "tailwindcss": "^4.3.3",
