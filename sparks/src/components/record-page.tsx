@@ -12,8 +12,9 @@ export function RecordPage({ backHref, backLabel, title, fields }: { backHref: s
     <div className="max-w-3xl">
       <RefreshRecentItems />
       <Link href={backHref} className="text-sm text-gray-500 hover:underline">← {backLabel}</Link>
-      <h1 className="mt-1 text-2xl font-semibold">{title}</h1>
-      <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-3 rounded border border-gray-200 bg-white p-4 text-sm sm:grid-cols-2">
+      <h1 className="mt-1 text-2xl font-extrabold tracking-tight">{title}</h1>
+      <div className="mt-2 h-1 w-12 rounded-full bg-brand" aria-hidden />
+      <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-3 rounded-md bg-white p-5 text-sm shadow-card sm:grid-cols-2">
         {fields.map((f) => (
           <div key={f.label}>
             <dt className="text-xs uppercase tracking-wide text-gray-500">{f.label}</dt>

@@ -14,7 +14,8 @@ export default async function LookupTablePage({ params }: { params: Promise<{ ta
   return (
     <div className="max-w-4xl">
       <Link href="/settings" className="text-sm text-gray-500 hover:underline">← Settings</Link>
-      <h1 className="mt-1 text-2xl font-semibold">{LOOKUP_TABLES[table].label}</h1>
+      <h1 className="mt-1 text-2xl font-extrabold tracking-tight">{LOOKUP_TABLES[table].label}</h1>
+      <div className="mt-2 h-1 w-12 rounded-full bg-brand" aria-hidden />
       <LookupEditor table={table} rows={rows} />
     </div>
   );

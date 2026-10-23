@@ -35,8 +35,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             ]
           : []),
         { label: i.kind === "PROGRESS" ? "Work this period" : "Subtotal", value: formatCents(i.subtotalCents) },
-        ...i.taxes.map((t) => ({ label: t.label, value: formatCents(t.taxCents) })),
         ...(i.holdbackCents ? [{ label: `Holdback retained (${(i.holdbackBp / 100).toFixed(0)}%)`, value: formatCents(i.holdbackCents) }] : []),
+        ...i.taxes.map((t) => ({ label: t.label, value: formatCents(t.taxCents) })),
         { label: i.holdbackCents ? "Amount due now" : "Total", value: formatCents(i.totalCents) },
         { label: "Paid", value: formatCents(i.paidCents) },
       ]}

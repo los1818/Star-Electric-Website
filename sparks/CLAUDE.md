@@ -33,6 +33,12 @@ changing anything.
   in the same commit.
 - Seed data is fake. Use Regina addresses; no real customer names.
 
+## Brand
+- Match starelectric.ca (repo root `style.css`): yellow `#F5C118` (hover `#D4A812`), black `#111111`,
+  greys `#2d2d2d` / `#f4f4f4`, muted text `#666666`, Inter font, 6px radius. Tokens live in
+  `src/app/globals.css` (`brand`, `brand-dark`, `ink`, `sidebar`, `surface`, `muted`); use them, not raw hex.
+- Primary buttons: yellow with black bold text. Page titles: extra-bold with a short yellow underline.
+
 ## Commands (run from `sparks/`)
 - `docker compose up -d`: start Postgres
 - `npm run db:migrate`: apply migrations; `npm run db:seed`: seed

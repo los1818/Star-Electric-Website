@@ -16,11 +16,14 @@ export function Sidebar({ items, recent }: { items: Pick<NavItem, "href" | "labe
 
   return (
     <aside className="flex w-60 shrink-0 flex-col bg-sidebar text-gray-200">
-      <Link href="/dashboard" className="flex items-center gap-2 px-4 py-4 text-lg font-semibold text-white">
-        <span className="text-brand" aria-hidden>★</span> Sparks
+      <Link href="/dashboard" className="block border-b border-white/10 px-4 py-4">
+        <span className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-white">
+          <span className="text-brand" aria-hidden>★</span> Sparks
+        </span>
+        <span className="mt-0.5 block text-[11px] font-semibold uppercase tracking-[0.15em] text-brand">Star Electric</span>
       </Link>
 
-      <nav aria-label="Modules" className="flex-1 overflow-y-auto px-2">
+      <nav aria-label="Modules" className="flex-1 overflow-y-auto px-2 pt-3">
         <ul className="space-y-0.5">
           {items.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -29,8 +32,8 @@ export function Sidebar({ items, recent }: { items: Pick<NavItem, "href" | "labe
                 <Link
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-3 rounded px-3 py-1.5 text-sm ${
-                    active ? "bg-brand font-medium text-ink" : "hover:bg-sidebar-hover hover:text-white"
+                  className={`flex items-center gap-3 rounded-md px-3 py-1.5 text-sm ${
+                    active ? "bg-brand font-bold text-ink" : "font-medium text-gray-300 hover:bg-sidebar-hover hover:text-white"
                   }`}
                 >
                   <span aria-hidden className="w-4 text-center">{item.icon}</span>
@@ -51,7 +54,7 @@ export function Sidebar({ items, recent }: { items: Pick<NavItem, "href" | "labe
             <ul className="mt-1 space-y-0.5" data-testid="recent-items">
               {recent.map((r) => (
                 <li key={r.id}>
-                  <Link href={r.href} className="block truncate rounded px-2 py-1 text-xs hover:bg-sidebar-hover hover:text-white" title={r.label}>
+                  <Link href={r.href} className="block truncate rounded-md px-2 py-1 text-xs hover:bg-sidebar-hover hover:text-white" title={r.label}>
                     <span className="text-gray-400">{r.entityType}</span> {r.label}
                   </Link>
                 </li>

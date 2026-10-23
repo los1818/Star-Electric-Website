@@ -49,7 +49,7 @@ export function MarkupTierEditor({ initial }: { initial: MarkupTierInput[] }) {
 
   return (
     <div className="mt-6">
-      <table className="w-full border-collapse rounded bg-white text-sm">
+      <table className="w-full border-collapse rounded-md bg-white text-sm">
         <thead>
           <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
             <th className="p-2">Job material cost from</th>
@@ -62,10 +62,10 @@ export function MarkupTierEditor({ initial }: { initial: MarkupTierInput[] }) {
             <tr key={r.key} className="border-b border-gray-100">
               <td className="p-2">
                 <span className="mr-1 text-gray-500">$</span>
-                <input aria-label={`Tier ${i + 1} from`} inputMode="decimal" value={r.from} onChange={(e) => update(r.key, { from: e.target.value })} className="w-32 rounded border border-gray-300 px-2 py-1" />
+                <input aria-label={`Tier ${i + 1} from`} inputMode="decimal" value={r.from} onChange={(e) => update(r.key, { from: e.target.value })} className="w-32 rounded-md border border-gray-300 px-2 py-1" />
               </td>
               <td className="p-2">
-                <input aria-label={`Tier ${i + 1} markup`} inputMode="decimal" value={r.markup} onChange={(e) => update(r.key, { markup: e.target.value })} className="w-20 rounded border border-gray-300 px-2 py-1" />
+                <input aria-label={`Tier ${i + 1} markup`} inputMode="decimal" value={r.markup} onChange={(e) => update(r.key, { markup: e.target.value })} className="w-20 rounded-md border border-gray-300 px-2 py-1" />
                 <span className="ml-1 text-gray-500">%</span>
               </td>
               <td className="p-2">
@@ -80,10 +80,10 @@ export function MarkupTierEditor({ initial }: { initial: MarkupTierInput[] }) {
         </tbody>
       </table>
       <div className="mt-3 flex items-center gap-3">
-        <button onClick={() => setRows((rs) => [...rs, { key: nextKey++, from: "", markup: "" }])} className="rounded border border-gray-300 bg-white px-3 py-1 text-sm hover:bg-gray-50">
+        <button onClick={() => setRows((rs) => [...rs, { key: nextKey++, from: "", markup: "" }])} className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm hover:bg-gray-50">
           Add tier
         </button>
-        <button onClick={save} disabled={pending} className="rounded bg-ink px-3 py-1 text-sm font-medium text-white disabled:opacity-50">
+        <button onClick={save} disabled={pending} className="rounded-md bg-ink px-3 py-1 text-sm font-bold text-white disabled:opacity-50">
           {pending ? "Saving…" : "Save tiers"}
         </button>
         {message && <span className="text-sm text-gray-700">{message}</span>}

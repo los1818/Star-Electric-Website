@@ -15,7 +15,7 @@ interface UserRow {
 
 export function UserAccessEditor({ users, employees, currentUserId }: { users: UserRow[]; employees: { id: string; label: string }[]; currentUserId: string }) {
   return (
-    <table className="mt-6 w-full border-collapse rounded bg-white text-sm">
+    <table className="mt-6 w-full border-collapse rounded-md bg-white text-sm">
       <thead>
         <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
           <th className="p-2">User</th>
@@ -56,14 +56,14 @@ function UserRowForm({ user, employees, isSelf }: { user: UserRow; employees: { 
         <div className="text-xs text-gray-500">{user.email}</div>
       </td>
       <td className="p-2">
-        <select aria-label={`Role for ${who}`} value={role} onChange={(e) => setRole(e.target.value as Role)} className="rounded border border-gray-300 px-2 py-1">
+        <select aria-label={`Role for ${who}`} value={role} onChange={(e) => setRole(e.target.value as Role)} className="rounded-md border border-gray-300 px-2 py-1">
           {ROLES.map((r) => (
             <option key={r} value={r}>{ROLE_LABELS[r]}</option>
           ))}
         </select>
       </td>
       <td className="p-2">
-        <select aria-label={`Employee for ${who}`} value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} className="max-w-56 rounded border border-gray-300 px-2 py-1">
+        <select aria-label={`Employee for ${who}`} value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} className="max-w-56 rounded-md border border-gray-300 px-2 py-1">
           <option value="">Not linked</option>
           {employees.map((e) => (
             <option key={e.id} value={e.id}>{e.label}</option>
@@ -74,7 +74,7 @@ function UserRowForm({ user, employees, isSelf }: { user: UserRow; employees: { 
         <input aria-label={`Active for ${who}`} type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
       </td>
       <td className="p-2">
-        <button onClick={save} disabled={pending} className="rounded bg-ink px-3 py-1 text-xs font-medium text-white disabled:opacity-50">
+        <button onClick={save} disabled={pending} className="rounded-md bg-ink px-3 py-1 text-xs font-bold text-white disabled:opacity-50">
           {pending ? "Saving…" : "Save"}
         </button>
         {message && <span className="ml-2 text-xs text-gray-600">{message}</span>}

@@ -6,7 +6,7 @@ import { updateLookupRow } from "@/server/actions/settings";
 
 export function LookupEditor({ table, rows }: { table: LookupKey; rows: LookupRow[] }) {
   return (
-    <table className="mt-6 w-full border-collapse rounded bg-white text-sm">
+    <table className="mt-6 w-full border-collapse rounded-md bg-white text-sm">
       <thead>
         <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
           <th className="p-2">Code</th>
@@ -43,16 +43,16 @@ function LookupRowForm({ table, row }: { table: LookupKey; row: LookupRow }) {
     <tr className="border-b border-gray-100">
       <td className="p-2 font-mono text-xs text-gray-500">{row.code}</td>
       <td className="p-2">
-        <input aria-label={`Label for ${row.code}`} value={label} onChange={(e) => setLabel(e.target.value)} className="w-full rounded border border-gray-300 px-2 py-1" />
+        <input aria-label={`Label for ${row.code}`} value={label} onChange={(e) => setLabel(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1" />
       </td>
       <td className="p-2">
-        <input aria-label={`Order for ${row.code}`} type="number" min={0} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="w-full rounded border border-gray-300 px-2 py-1" />
+        <input aria-label={`Order for ${row.code}`} type="number" min={0} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1" />
       </td>
       <td className="p-2">
         <input aria-label={`Active for ${row.code}`} type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
       </td>
       <td className="p-2">
-        <button onClick={save} disabled={pending} className="rounded bg-ink px-3 py-1 text-xs font-medium text-white disabled:opacity-50">
+        <button onClick={save} disabled={pending} className="rounded-md bg-ink px-3 py-1 text-xs font-bold text-white disabled:opacity-50">
           {pending ? "Saving…" : "Save"}
         </button>
         {message && <span className="ml-2 text-xs text-gray-600">{message}</span>}

@@ -17,21 +17,22 @@ export async function ModulePage({ href, stats }: { href: string; stats?: (user:
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-2xl font-semibold">{item.label}</h1>
-      <p className="mt-1 text-sm text-gray-600">{item.description}</p>
+      <h1 className="text-2xl font-extrabold tracking-tight">{item.label}</h1>
+      <div className="mt-2 h-1 w-12 rounded-full bg-brand" aria-hidden />
+      <p className="mt-3 text-sm text-muted">{item.description}</p>
 
       {values.length > 0 && (
         <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {values.map((s) => (
-            <div key={s.label} className="rounded-lg border border-gray-200 bg-white p-4">
+            <div key={s.label} className="rounded-md border-t-4 border-brand bg-white p-4 shadow-card">
               <dt className="text-xs uppercase tracking-wide text-gray-500">{s.label}</dt>
-              <dd className="mt-1 text-2xl font-semibold">{s.value}</dd>
+              <dd className="mt-1 text-2xl font-extrabold">{s.value}</dd>
             </div>
           ))}
         </dl>
       )}
 
-      <p className="mt-6 rounded border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-600">
+      <p className="mt-6 rounded-md border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-600">
         This module is a placeholder. It&apos;s built in <strong>Phase {item.phase}</strong> (see docs/SPEC.md §8).
       </p>
     </div>

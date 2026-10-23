@@ -1,11 +1,19 @@
 @import "tailwindcss";
 
+/* Star Electric brand, matching starelectric.ca (style.css :root). */
 @theme {
-  --color-brand: #f5c118;
-  --color-brand-dark: #d4a812;
-  --color-ink: #111111;
-  --color-sidebar: #1a1d21;
-  --color-sidebar-hover: #2a2e34;
+  --font-sans: var(--font-inter), "Segoe UI", Arial, sans-serif;
+
+  --color-brand: #f5c118; /* --yellow */
+  --color-brand-dark: #d4a812; /* --yellow-dark */
+  --color-ink: #111111; /* --black */
+  --color-sidebar: #111111; /* site header */
+  --color-sidebar-hover: #2d2d2d; /* --gray-mid */
+  --color-surface: #f4f4f4; /* --gray-light */
+  --color-muted: #666666; /* --text-muted */
+
+  --radius-md: 6px; /* --radius */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 html,
@@ -14,6 +22,12 @@ body {
 }
 
 body {
-  background: #f4f5f7;
-  color: #1f2328;
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* Yellow focus ring, as on the site's form fields. */
+:where(input, select, textarea, button, a, summary):focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
 }

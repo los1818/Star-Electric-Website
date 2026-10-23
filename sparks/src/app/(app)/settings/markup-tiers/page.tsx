@@ -12,7 +12,8 @@ export default async function MarkupTiersPage() {
   return (
     <div className="max-w-3xl">
       <Link href="/settings" className="text-sm text-gray-500 hover:underline">← Settings</Link>
-      <h1 className="mt-1 text-2xl font-semibold">Markup tiers</h1>
+      <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Markup tiers</h1>
+      <div className="mt-2 h-1 w-12 rounded-full bg-brand" aria-hidden />
       <p className="mt-1 text-sm text-gray-600">
         Sparks suggests a starting material markup on each quote and invoice from the job&apos;s total material cost. The
         highest tier the job reaches wins. It&apos;s only a starting point: you can change the markup on any quote, invoice
