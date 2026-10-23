@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { can } from "@/lib/auth/permissions";
 import { requirePageAccess } from "@/lib/auth/server";
 import { recordRecentItem } from "@/server/recent";
+import { formatDateTime } from "@/lib/time";
 
 export default async function WorkOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePageAccess("workorders:read_all", "workorders:read_assigned");
@@ -35,7 +36,7 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
         { label: "Type", value: w.type.label },
         { label: "Status", value: w.status.label },
         { label: "Priority", value: w.priority.label },
-        { label: "Scheduled", value: w.scheduledStart?.toLocaleString("en-CA", { timeZone: "America/Regina" }) },
+        { label: "Scheduled", value: w.scheduledStart && formatDateTime(w.scheduledStart) },
         { label: "Assigned", value: w.assignments.map((a) => `${a.employee.firstName} ${a.employee.lastName}`).join(", ") },
         { label: "Customer PO", value: w.customerPoNumber },
         { label: "Description", value: w.description },

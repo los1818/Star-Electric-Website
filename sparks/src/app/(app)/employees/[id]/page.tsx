@@ -10,8 +10,7 @@ import { ROLE_LABELS, can } from "@/lib/auth/permissions";
 import { requirePageAccess } from "@/lib/auth/server";
 import { formatCents, formatHours } from "@/lib/money";
 import { setEmployeeActive } from "@/server/actions/people";
-
-const TZ = "America/Regina";
+import { formatDateTime, formatTime } from "@/lib/time";
 
 export default async function EmployeePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePageAccess("employees:read");
@@ -31,7 +30,6 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
   if (!e) notFound();
   const recentHours = await db.timeEntry.aggregate({ where: { employeeId: id, date: { gte: twoWeeksAgo } }, _sum: { hoursHundredths: true } });
   const name = `${e.firstName} ${e.lastName}`;
-  const fmt = (d: Date) => d.toLocaleString("en-CA", { timeZone: TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
   return (
     <div className="max-w-6xl">
@@ -70,7 +68,7 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
               <ul className="divide-y divide-gray-100 text-sm">
                 {e.scheduleEntries.map((s) => (
                   <li key={s.id} className="py-2">
-                    <span className="font-semibold">{fmt(s.startsAt)}</span> – {s.endsAt.toLocaleTimeString("en-CA", { timeZone: TZ, hour: "numeric", minute: "2-digit" })}
+                    <span className="font-semibold">{formatDateTime(s.startsAt)}</span> – {formatTime(s.endsAt)}
                     {s.workOrder && (
                       <>
                         {" · "}

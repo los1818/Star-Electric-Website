@@ -2,6 +2,7 @@ import { Prisma, type InventoryItem, type PrismaClient, type Role } from "@prism
 import { computeTotals, lineAmountCents, markupPriceCents, type TaxComponentRate } from "../../src/lib/money";
 import { suggestMarkupBp } from "../../src/lib/markup";
 import { progressInvoiceTotals, progressLine } from "../../src/lib/progress-billing";
+import { reginaDate, reginaTime } from "../../src/lib/time";
 
 // Fake demo data for development. Every business name is invented; addresses use real
 // Regina street names with made-up numbers; phone numbers are in the fictional 555-01xx range.
@@ -10,11 +11,10 @@ const pick = <T>(arr: readonly T[], i: number): T => arr[i % arr.length];
 const pad = (n: number, width: number) => String(n).padStart(width, "0");
 const phone = (n: number) => `(306) 555-01${pad(n % 100, 2)}`;
 
+/** `hour` o'clock Regina time, `days` from today (Regina calendar). */
 function daysFromNow(days: number, hour = 8): Date {
-  const d = new Date();
-  d.setHours(hour, 0, 0, 0);
-  d.setDate(d.getDate() + days);
-  return d;
+  const { year, month, day } = reginaDate(new Date());
+  return reginaTime(year, month, day + days, hour);
 }
 
 function dateOnly(days: number): Date {
@@ -284,7 +284,7 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
     items.push(item);
     await db.stockLevel.create({ data: { itemId: item.id, locationId: warehouse.id, quantity: new Prisma.Decimal(unit === "FT" ? 1000 + i * 50 : 20 + i) } });
     if (i % 3 === 0) {
-      await db.stockLevel.create({ data: { itemId: item.id, locationId: pick(trucks, i).id, quantity: new Prisma.Decimal(unit === "FT" ? 150 : 4) } });
+      await db.stockLevel.create({ data: { itemId: item.id, locationId: pick(trucks, i / 3).id, quantity: new Prisma.Decimal(unit === "FT" ? 150 : 4) } });
     }
   }
 
@@ -648,7 +648,8 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
   const openWork = workOrders.filter((w) => ["SCHEDULED", "DISPATCHED", "IN_PROGRESS"].includes(w.def.status));
   for (let d = -3; d <= 4; d++) {
     const day = daysFromNow(d, 7);
-    if (day.getDay() === 0 || day.getDay() === 6) continue;
+    const weekday = new Date(day.getTime() - 6 * 3_600_000).getUTCDay(); // Regina weekday
+    if (weekday === 0 || weekday === 6) continue;
     for (const [e, employee] of employees.entries()) {
       const wo = openWork[(e + d + 10) % openWork.length];
       await db.scheduleEntry.create({
