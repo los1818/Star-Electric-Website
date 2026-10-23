@@ -9,6 +9,11 @@ The modules themselves are placeholders until later phases.
 
 ## Run it locally
 
+**Not a developer?** Follow [RUN-ON-WINDOWS.md](RUN-ON-WINDOWS.md): install Node.js and Docker Desktop, then
+double-click `Start Sparks (Windows).cmd` (or `scripts/start-local.sh` on a Mac).
+
+Developers:
+
 You need Node.js 22+ and Docker Desktop.
 
 ```bash
