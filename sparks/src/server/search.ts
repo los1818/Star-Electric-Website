@@ -32,9 +32,27 @@ export async function globalSearch(user: CurrentUser, rawQuery: string): Promise
     hits.push(...customers.map((c) => ({ type: "Customer", id: c.id, title: c.name, subtitle: c.accountNumber, href: `/customers/${c.id}` })));
   }
 
+  if (can(user.role, "customers:read")) {
+    const contacts = await db.contact.findMany({
+      where: { OR: [{ firstName: contains }, { lastName: contains }, { email: contains }, { phone: contains }, { mobile: contains }] },
+      include: { customer: { select: { id: true, name: true } } },
+      take: PER_TYPE,
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    });
+    hits.push(
+      ...contacts.map((c) => ({
+        type: "Contact",
+        id: c.id,
+        title: `${c.firstName} ${c.lastName}`,
+        subtitle: [c.title, c.customer.name, c.phone ?? c.email].filter(Boolean).join(" · "),
+        href: `/customers/${c.customer.id}`,
+      })),
+    );
+  }
+
   if (can(user.role, "jobsites:read")) {
     const sites = await db.jobSite.findMany({
-      where: { OR: [{ name: contains }, { street: contains }, { postal: contains }] },
+      where: { OR: [{ name: contains }, { street: contains }, { postal: contains }, { customer: { name: contains } }] },
       include: { customer: { select: { name: true } } },
       take: PER_TYPE,
       orderBy: { name: "asc" },
@@ -82,6 +100,21 @@ export async function globalSearch(user: CurrentUser, rawQuery: string): Promise
       orderBy: { number: "desc" },
     });
     hits.push(...invoices.map((i) => ({ type: "Invoice", id: i.id, title: i.number, subtitle: i.customer.name, href: `/invoices/${i.id}` })));
+  }
+
+  if (can(user.role, "employees:read")) {
+    const employees = await db.employee.findMany({
+      where: { OR: [{ firstName: contains }, { lastName: contains }, { employeeNumber: contains }, { phone: contains }] },
+      include: { trade: { select: { label: true } } },
+      take: PER_TYPE,
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    });
+    hits.push(...employees.map((e) => ({ type: "Employee", id: e.id, title: `${e.firstName} ${e.lastName}`, subtitle: [e.employeeNumber, e.trade?.label].filter(Boolean).join(" · "), href: `/employees/${e.id}` })));
+  }
+
+  if (can(user.role, "vendors:read")) {
+    const vendors = await db.vendor.findMany({ where: { OR: [{ name: contains }, { accountNumber: contains }, { contactName: contains }] }, take: PER_TYPE, orderBy: { name: "asc" } });
+    hits.push(...vendors.map((v) => ({ type: "Vendor", id: v.id, title: v.name, subtitle: [v.contactName, v.phone].filter(Boolean).join(" · ") || "Vendor", href: `/vendors/${v.id}` })));
   }
 
   return hits;

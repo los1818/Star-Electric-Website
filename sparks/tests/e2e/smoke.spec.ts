@@ -51,19 +51,28 @@ test("technicians only see their modules and are blocked from others", async ({ 
   await expect(page).toHaveURL(/\/forbidden$/);
 });
 
-test("administrator can edit a lookup table in Settings", async ({ page }) => {
+test("administrator edits lookup tables in Settings, including type-specific fields", async ({ page }) => {
   await loginAs(page, "Alex Admin");
-  await page.goto("/settings/priorities");
-  const label = page.getByRole("textbox", { name: "Label for LOW" });
-  await label.fill("Low (edited)");
-  await page.getByRole("row").filter({ has: label }).getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText("Saved")).toBeVisible();
+  await page.goto("/settings/labor-rates");
+  const row = page.locator("li").filter({ hasText: "Journeyperson" }).first();
+  await row.getByText("Edit ▾").click();
+  await row.getByRole("textbox", { name: "Sell per hour" }).fill("119.50");
+  await row.getByRole("button", { name: "Save" }).click();
+  await expect(row.getByText("Saved “Journeyperson”.")).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("textbox", { name: "Label for LOW" })).toHaveValue("Low (edited)");
-  // Put it back so reruns start from the seeded value.
-  await page.getByRole("textbox", { name: "Label for LOW" }).fill("Low");
-  await page.getByRole("row").filter({ has: page.getByRole("textbox", { name: "Label for LOW" }) }).getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText("Saved")).toBeVisible();
+  await expect(page.locator("li").filter({ hasText: "Journeyperson" }).first()).toContainText("Sell per hour: $119.50");
+
+  // Bad input is refused with a message beside the field.
+  const again = page.locator("li").filter({ hasText: "Journeyperson" }).first();
+  await again.getByText("Edit ▾").click();
+  await again.getByRole("textbox", { name: "Sell per hour" }).fill("lots");
+  await again.getByRole("button", { name: "Save" }).click();
+  await expect(again.getByText("Sell per hour must be an amount like 125.00")).toBeVisible();
+
+  // Put it back for reruns.
+  await again.getByRole("textbox", { name: "Sell per hour" }).fill("115.00");
+  await again.getByRole("button", { name: "Save" }).click();
+  await expect(again.getByText("Saved “Journeyperson”.")).toBeVisible();
 });
 
 test("a user awaiting access sees nothing until an administrator assigns a role", async ({ page, browser }) => {

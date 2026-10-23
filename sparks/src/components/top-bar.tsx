@@ -15,7 +15,7 @@ export function TopBar({ user }: { user: CurrentUser }) {
           id="global-search"
           name="q"
           type="search"
-          placeholder="Search customers, sites, work orders, quotes, invoices…"
+          placeholder="Search customers, contacts, sites, work orders, projects, invoices, people…"
           className="w-full max-w-xl rounded-md border border-gray-300 bg-gray-50 px-3 py-1.5 text-sm focus:bg-white"
         />
       </form>

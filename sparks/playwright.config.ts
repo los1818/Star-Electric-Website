@@ -4,8 +4,12 @@ const port = Number(process.env.PORT ?? 3000);
 
 export default defineConfig({
   testDir: "tests/e2e",
-  timeout: 60_000,
+  timeout: 90_000,
+  // The dev server compiles pages on first visit, which can take several seconds.
+  expect: { timeout: 15_000 },
   fullyParallel: false,
+  // Tests share one seeded database, so run them one at a time.
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: {
