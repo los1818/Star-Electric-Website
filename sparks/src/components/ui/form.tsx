@@ -47,11 +47,14 @@ function FormBanner() {
 
 function useField(name: string, fallback: string | null | undefined) {
   const state = useContext(FormStateContext);
-  const submitted = state.values && name in state.values ? state.values[name] : undefined;
+  // Re-fill with what was submitted only after a failed save; after success the form shows the
+  // saved record (edit forms) or starts blank (add forms).
+  const refill = !state.ok && state.values !== undefined;
+  const submitted = refill && name in state.values! ? state.values![name] : undefined;
   return {
     defaultValue: submitted !== undefined ? String(submitted) : (fallback ?? ""),
     error: state.fieldErrors?.[name],
-    submittedAnything: state.values !== undefined,
+    submittedAnything: refill,
     submitted,
   };
 }

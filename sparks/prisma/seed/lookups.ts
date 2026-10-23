@@ -199,6 +199,8 @@ export const SEQUENCES = [
   { code: "INVOICE", prefix: "INV-", nextValue: 1, padding: 6 },
   { code: "PURCHASE_ORDER", prefix: "PO-", nextValue: 1, padding: 6 },
   { code: "PROJECT", prefix: "P-", nextValue: 1, padding: 4 },
+  { code: "CUSTOMER", prefix: "C", nextValue: 1001, padding: 5 },
+  { code: "EMPLOYEE", prefix: "E", nextValue: 101, padding: 4 },
   { code: "SERVICE_AGREEMENT", prefix: "SA-", nextValue: 1, padding: 4 },
 ];
 

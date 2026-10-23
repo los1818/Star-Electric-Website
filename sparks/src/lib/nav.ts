@@ -46,13 +46,15 @@ export interface NewMenuItem {
   type: string;
   label: string;
   permission: Permission;
+  /** Where the item goes; placeholder page until the module's create screen exists. */
+  href: string;
 }
 
 export const NEW_MENU_ITEMS: NewMenuItem[] = [
-  { type: "work-order", label: "Work order", permission: "workorders:write" },
-  { type: "quote", label: "Quote", permission: "quotes:write" },
-  { type: "invoice", label: "Invoice", permission: "invoices:write" },
-  { type: "customer", label: "Customer", permission: "customers:write" },
-  { type: "job-site", label: "Job site", permission: "jobsites:write" },
-  { type: "purchase-order", label: "Purchase order", permission: "purchaseorders:write" },
+  { type: "work-order", label: "Work order", permission: "workorders:write", href: "/new/work-order" },
+  { type: "quote", label: "Quote", permission: "quotes:write", href: "/new/quote" },
+  { type: "invoice", label: "Invoice", permission: "invoices:write", href: "/new/invoice" },
+  { type: "customer", label: "Customer", permission: "customers:write", href: "/customers/new" },
+  { type: "job-site", label: "Job site", permission: "jobsites:write", href: "/job-sites/new" },
+  { type: "purchase-order", label: "Purchase order", permission: "purchaseorders:write", href: "/new/purchase-order" },
 ];

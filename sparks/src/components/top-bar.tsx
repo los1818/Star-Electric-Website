@@ -28,7 +28,7 @@ export function TopBar({ user }: { user: CurrentUser }) {
           <ul className="absolute right-0 z-10 mt-1 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
             {newItems.map((i) => (
               <li key={i.type}>
-                <Link href={`/new/${i.type}`} className="block px-3 py-1.5 text-sm hover:bg-gray-100">
+                <Link href={i.href} className="block px-3 py-1.5 text-sm hover:bg-gray-100">
                   {i.label}
                 </Link>
               </li>

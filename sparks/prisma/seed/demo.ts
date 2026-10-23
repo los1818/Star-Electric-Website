@@ -658,7 +658,7 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
   }
 
   // Continue numbering after the seeded documents.
-  const next: Record<string, number> = { WORK_ORDER: WORK_ORDERS.length + 1, QUOTE: quoteDefs.length + 1, INVOICE: billable.length + progressInvoices + 1, PURCHASE_ORDER: 3, SERVICE_AGREEMENT: 3, PROJECT: projectDefs.length + 1 };
+  const next: Record<string, number> = { WORK_ORDER: WORK_ORDERS.length + 1, QUOTE: quoteDefs.length + 1, INVOICE: billable.length + progressInvoices + 1, PURCHASE_ORDER: 3, SERVICE_AGREEMENT: 3, PROJECT: projectDefs.length + 1, CUSTOMER: 1001 + CUSTOMERS.length, EMPLOYEE: 101 + EMPLOYEES.length };
   for (const [code, nextValue] of Object.entries(next)) {
     await db.sequence.update({ where: { code }, data: { nextValue } });
   }
