@@ -1,6 +1,6 @@
 # Sparks — Specification
 
-**Status: DRAFT v0.7, written by Claude because no SPEC.md was supplied.**
+**Status: DRAFT v0.8, written by Claude because no SPEC.md was supplied.**
 It is modelled on ServiceBox and adjusted for commercial electrical contracting. Anything marked
 **[ASSUMPTION]** needs confirmation from Star Electric before the phase that depends on it.
 
@@ -30,21 +30,22 @@ PENDING) are enough for now; per-user permission overrides can come later.
 ## 3. Modules (left sidebar)
 In order:
 1. **Dashboard**: today's work, overdue WOs, unbilled work, open quotes
-2. **Dispatch Board**: schedule/assign WOs to technicians (calendar + map)
+2. **Dispatch Board**: crew schedules: assign electricians to work orders and projects by day (calendar + map)
 3. **Work Orders**
-4. **Customers**
-5. **Job Sites**
-6. **Quotes**
-7. **Invoices**
-8. **Purchase Orders**
-9. **Inventory**: items, stock by location (warehouse, trucks)
-10. **Equipment**: customer-owned equipment at sites (panels, transformers, generators, UPS, lighting controls), with service history
-11. **Service Agreements**: recurring maintenance contracts that spawn WOs (e.g. annual IR scans, emergency lighting tests)
-12. **Timesheets**
-13. **Employees**
-14. **Vendors**
-15. **Reports**
-16. **Settings**: lookup tables, tax levels, company info, users
+4. **Projects**: contract jobs: contract value, change orders, schedule of values, progress billing, holdback
+5. **Customers**
+6. **Job Sites**
+7. **Quotes**
+8. **Invoices**
+9. **Purchase Orders**
+10. **Inventory**: items, stock by location (warehouse, trucks)
+11. **Equipment**: customer-owned equipment at sites (panels, transformers, generators, UPS, lighting controls), with service history
+12. **Service Agreements**: recurring maintenance contracts that spawn WOs (e.g. annual IR scans, emergency lighting tests)
+13. **Timesheets**
+14. **Employees**
+15. **Vendors**
+16. **Reports**
+17. **Settings**: lookup tables, tax levels, company info, users
 
 Global elements: search box (customers, sites, WOs, quotes, invoices by number/name/address),
 a **New** menu (work order, quote, invoice, customer, job site, PO), and **Recent items**
@@ -107,6 +108,20 @@ All tables have `id` (cuid), `createdAt`, `updatedAt`. Money in integer cents, r
 - `AuditLog`: user, action, entity, entity id, diff JSON
 - `RecentItem`: user, entity type, entity id, label, viewedAt
 
+**Projects**
+- `Project`: number (P-0001), name, customer, job site, status, project manager, contract/PO numbers,
+  original contract value, holdback % (default 10%), dates. Work orders, quotes, invoices, POs and
+  schedule entries can belong to a project.
+- `ChangeOrder`: per-project number (CO-001), title, amount (negative = credit), status (Pending, Approved,
+  Rejected, Void: editable lookup). Approved COs add to the revised contract and can add SOV lines.
+- `ScheduleOfValuesLine`: the contract broken into billable lines.
+- `InvoiceProgressLine`: per SOV line on a progress invoice: % complete to date, previously billed, this period.
+- `Invoice.kind`: STANDARD, PROGRESS, HOLDBACK_RELEASE; progress invoices store holdback % and amount retained.
+
+**Scheduling and time**
+- `ScheduleEntry`: an electrician's block of time on a work order/project (the crew calendar).
+- `TimeEntry` also stores optional clock-in/out times and when the electrician submitted it.
+
 **Migration staging**: `ImportBatch` plus one generic `StgTrimbleRow` table (source table, source key, raw row as JSON,
 status, mapped entity/id). Generic because the Trimble table list isn't known yet.
 
@@ -123,6 +138,22 @@ status, mapped entity/id). Generic because the Trimble table list isn't known ye
   Tax per component is computed on the sum of the lines that carry that component.
 - A document discount reduces each component's taxable base in proportion to that base's share of the subtotal.
 - Discounts: percentage or fixed, applied before tax.
+
+### Projects, progress billing and holdback
+- Revised contract = original contract + approved change orders. Pending COs are shown separately.
+- A progress invoice bills each SOV line: `billed to date = scheduled value × % complete`, `this period =
+  billed to date − previously billed` (negative allowed as a correction).
+- Holdback is retained on the work billed this period at the project's holdback % (default 10%,
+  Saskatchewan Builders' Lien Act). Amount due now = work − holdback + tax.
+- Tax is charged on the amount due now; tax on holdback is charged when it is released on a
+  HOLDBACK_RELEASE invoice. **[ASSUMPTION: confirm GST/PST timing on holdback with Star's accountant]**
+- **[OPEN: holdback release rules: after substantial completion + lien period (40 days in SK)?]**
+
+### Timesheets and schedules (no more paper)
+- Electricians enter their own time on their phone against work orders (or shop time), optionally with
+  start/end times, and submit it; office reviews and approves. Approved billable time flows to invoices.
+- Office builds crew schedules on the dispatch board; electricians see their schedule on their phone.
+- Existing time and schedules come over from ServiceBox (CSV export).
 
 ### Inventory (modelled on Trimble Accubid)
 - Prices are per E/C/M exactly as in Trimble (e.g. conduit per 100 ft, screws per 1000).
@@ -173,9 +204,10 @@ No cut-off date.
   reporting. Open jobs and current projects come over as live work orders.
 - A dry run and a reconciliation report (counts and dollar totals per table vs Trimble) are required
   before go-live; the final import runs at cut-over.
-- **[OPEN: Does ServiceBox hold anything Trimble doesn't (e.g. service calls, equipment, contacts)?]**
-- **[OPEN: How do current projects work in Trimble: contract value, change orders, progress billing,
-  holdback? This decides whether Sparks needs a Project record above work orders.]**
+- **ServiceBox**: electricians' time entries and schedules come from the ServiceBox export (confirmed);
+  matched to employees and Trimble jobs during import.
+- **Current projects** use contract value, change orders, progress billing and holdback (confirmed), so they
+  come over as `Project` records with their SOV, change orders, progress invoices and holdback held.
 
 ## 7. Integrations (later phases)
 - Microsoft Entra ID SSO (Phase 0)
@@ -188,9 +220,12 @@ No cut-off date.
   tables, Trimble ETL stub, tests.
 - **Phase 1: Core records.** Customers, contacts, job sites, employees, vendors; Settings UI for lookups; global search; recent items;
   ServiceBox CSV import of customers, job sites and contacts.
-- **Phase 2: Work orders and dispatch.** WO CRUD, lifecycle, dispatch board, technician mobile view, notes/photos/signature.
-- **Phase 3: Time and materials.** Timesheets, approvals, material usage, inventory and stock, POs.
-- **Phase 4: Quoting and invoicing.** Quotes → WO, invoices from WOs, payments, PDFs, email.
+- **Phase 2: Work orders, projects, schedules and time.** WO CRUD and lifecycle; projects and change orders;
+  dispatch board / crew schedules; technician mobile view with schedule, **time entry and submission**
+  (replaces paper timesheets), notes/photos/signature; office timesheet approval; ServiceBox time/schedule import.
+- **Phase 3: Materials and purchasing.** Material usage on WOs, inventory and stock, POs.
+- **Phase 4: Quoting and invoicing.** Quotes → WO/project, invoices from WOs, **progress invoices with holdback**,
+  holdback release, payments, PDFs, email.
 - **Phase 5: Equipment and service agreements.** Recurring WO generation.
 - **Phase 6: Reports, accounting export, data migration** (Trimble + ServiceBox), go-live.
 
@@ -212,4 +247,6 @@ No cut-off date.
 | 2026-10-22 | No stored sell price on materials: markup is set per quote/invoice (varies with job size and cost changes). |
 | 2026-10-22 | Sparks suggests a starting markup from editable tiers by job material cost; users can always override. |
 | 2026-10-22 | Migrate all Trimble history (customers, jobs, current projects, inventory); records keep a `legacyRef`. |
+| 2026-10-23 | Projects added above work orders: contract, change orders, SOV, progress billing, 10% holdback default. |
+| 2026-10-23 | Electricians' time entry and crew schedules move to Phase 2; ServiceBox import covers time and schedules. |
 | 2026-10-22 | App renamed from "Star FieldOps" to **Sparks**; folder `fieldops/` → `sparks/`. |

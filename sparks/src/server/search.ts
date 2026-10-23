@@ -54,6 +54,16 @@ export async function globalSearch(user: CurrentUser, rawQuery: string): Promise
     hits.push(...workOrders.map((w) => ({ type: "Work order", id: w.id, title: `${w.number}: ${w.summary}`, subtitle: `${w.customer.name} · ${w.status.label}`, href: `/work-orders/${w.id}` })));
   }
 
+  if (can(user.role, "projects:read")) {
+    const projects = await db.project.findMany({
+      where: { OR: [{ number: contains }, { name: contains }, { contractNumber: contains }, { customer: { name: contains } }] },
+      include: { customer: { select: { name: true } }, status: { select: { label: true } } },
+      take: PER_TYPE,
+      orderBy: { number: "desc" },
+    });
+    hits.push(...projects.map((p) => ({ type: "Project", id: p.id, title: `${p.number}: ${p.name}`, subtitle: `${p.customer.name} · ${p.status.label}`, href: `/projects/${p.id}` })));
+  }
+
   if (can(user.role, "quotes:read")) {
     const quotes = await db.quote.findMany({
       where: { OR: [{ number: contains }, { title: contains }, { customer: { name: contains } }] },

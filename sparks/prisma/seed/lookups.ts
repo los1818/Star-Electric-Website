@@ -56,6 +56,23 @@ export const PRIORITIES = withOrder([
   { code: "EMERGENCY", label: "Emergency", color: "#dc2626" },
 ]);
 
+export const PROJECT_STATUSES = withOrder([
+  { code: "BIDDING", label: "Bidding", color: "#6b7280", isClosed: false },
+  { code: "AWARDED", label: "Awarded", color: "#2563eb", isClosed: false },
+  { code: "IN_PROGRESS", label: "In Progress", color: "#d97706", isClosed: false },
+  { code: "SUBSTANTIALLY_COMPLETE", label: "Substantially Complete", color: "#0891b2", isClosed: false },
+  { code: "COMPLETE", label: "Complete", color: "#059669", isClosed: false },
+  { code: "CLOSED", label: "Closed", color: "#111827", isClosed: true },
+  { code: "CANCELLED", label: "Cancelled", color: "#991b1b", isClosed: true },
+]);
+
+export const CHANGE_ORDER_STATUSES = withOrder([
+  { code: "PENDING", label: "Pending", color: "#d97706", isApproved: false },
+  { code: "APPROVED", label: "Approved", color: "#059669", isApproved: true },
+  { code: "REJECTED", label: "Rejected", color: "#991b1b", isApproved: false },
+  { code: "VOID", label: "Void", color: "#6b7280", isApproved: false },
+]);
+
 export const QUOTE_STATUSES = withOrder([
   { code: "DRAFT", label: "Draft", color: "#6b7280" },
   { code: "SENT", label: "Sent", color: "#2563eb" },
@@ -179,6 +196,7 @@ export const SEQUENCES = [
   { code: "QUOTE", prefix: "Q-", nextValue: 1, padding: 6 },
   { code: "INVOICE", prefix: "INV-", nextValue: 1, padding: 6 },
   { code: "PURCHASE_ORDER", prefix: "PO-", nextValue: 1, padding: 6 },
+  { code: "PROJECT", prefix: "P-", nextValue: 1, padding: 4 },
   { code: "SERVICE_AGREEMENT", prefix: "SA-", nextValue: 1, padding: 4 },
 ];
 
@@ -204,6 +222,8 @@ export async function seedLookups(db: PrismaClient): Promise<void> {
   await upsertAll(db.workOrderType, WORK_ORDER_TYPES);
   await upsertAll(db.workOrderStatus, WORK_ORDER_STATUSES);
   await upsertAll(db.priority, PRIORITIES);
+  await upsertAll(db.projectStatus, PROJECT_STATUSES);
+  await upsertAll(db.changeOrderStatus, CHANGE_ORDER_STATUSES);
   await upsertAll(db.quoteStatus, QUOTE_STATUSES);
   await upsertAll(db.invoiceStatus, INVOICE_STATUSES);
   await upsertAll(db.purchaseOrderStatus, PURCHASE_ORDER_STATUSES);

@@ -7,6 +7,8 @@ export const LOOKUP_TABLES = {
   "work-order-types": { label: "Work order types", model: "workOrderType" },
   "work-order-statuses": { label: "Work order statuses", model: "workOrderStatus" },
   priorities: { label: "Priorities", model: "priority" },
+  "project-statuses": { label: "Project statuses", model: "projectStatus" },
+  "change-order-statuses": { label: "Change order statuses", model: "changeOrderStatus" },
   "quote-statuses": { label: "Quote statuses", model: "quoteStatus" },
   "invoice-statuses": { label: "Invoice statuses", model: "invoiceStatus" },
   "purchase-order-statuses": { label: "Purchase order statuses", model: "purchaseOrderStatus" },

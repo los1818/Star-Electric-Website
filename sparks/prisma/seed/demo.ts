@@ -1,6 +1,7 @@
 import { Prisma, type InventoryItem, type PrismaClient, type Role } from "@prisma/client";
 import { computeTotals, lineAmountCents, markupPriceCents, type TaxComponentRate } from "../../src/lib/money";
 import { suggestMarkupBp } from "../../src/lib/markup";
+import { progressInvoiceTotals, progressLine } from "../../src/lib/progress-billing";
 
 // Fake demo data for development. Every business name is invented; addresses use real
 // Regina street names with made-up numbers; phone numbers are in the fictional 555-01xx range.
@@ -544,8 +545,120 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
     });
   }
 
+  // Projects: contract, schedule of values, change orders, and a progress invoice with holdback.
+  const projectStatuses = await idsByCode(db.projectStatus.findMany());
+  const coStatuses = await idsByCode(db.changeOrderStatus.findMany());
+  const projectDefs = [
+    {
+      wo: workOrders[2],
+      name: "Tenant improvement: 2nd floor medical offices",
+      status: "IN_PROGRESS",
+      sov: [
+        ["Mobilization, permits and SaskPower inspection", 850_000],
+        ["Rough-in: conduit, boxes and branch wiring", 9_600_000],
+        ["Lighting supply and install", 7_200_000],
+        ["Devices and trim-out", 3_800_000],
+        ["Fire alarm devices and wiring", 2_200_000],
+        ["Testing, commissioning and closeout", 1_200_000],
+      ] as [string, number][],
+      changeOrders: [
+        { number: "CO-001", title: "Add six dedicated exam-room circuits", amountCents: 785_000, status: "APPROVED" },
+        { number: "CO-002", title: "Upgrade lighting controls to networked system", amountCents: 1_240_000, status: "PENDING" },
+      ],
+      // Progress claim #1 (percent complete to date per SOV line).
+      claim: [10_000, 6000, 2000, 0, 2500, 0],
+    },
+    {
+      wo: workOrders[13],
+      name: "Production line 3: new 600V feed and equipment connections",
+      status: "AWARDED",
+      sov: [
+        ["Engineering review and submittals", 620_000],
+        ["Feeder and distribution", 4_800_000],
+        ["Equipment connections", 2_600_000],
+        ["Testing and commissioning", 600_000],
+      ] as [string, number][],
+      changeOrders: [{ number: "CO-001", title: "Credit: owner-supplied fused disconnect", amountCents: -150_000, status: "APPROVED" }],
+      claim: null,
+    },
+  ];
+  let progressInvoices = 0;
+  for (const [n, def] of projectDefs.entries()) {
+    const project = await db.project.create({
+      data: {
+        number: `P-${pad(n + 1, 4)}`,
+        name: def.name,
+        customerId: def.wo.customerId,
+        jobSiteId: def.wo.jobSiteId,
+        statusId: projectStatuses.get(def.status)!,
+        managerId: office.id,
+        taxLevelId: taxLevels.get("GST_PST"),
+        contractNumber: `SUB-${2026}-${pad(41 + n, 3)}`,
+        originalContractCents: def.sov.reduce((sum, [, v]) => sum + v, 0),
+        holdbackBp: 1000,
+        startDate: dateOnly(-45 + n * 30),
+        sovLines: { create: def.sov.map(([description, scheduledValueCents], i) => ({ description, scheduledValueCents, sortOrder: i })) },
+      },
+      include: { sovLines: { orderBy: { sortOrder: "asc" } } },
+    });
+    await db.workOrder.update({ where: { id: def.wo.id }, data: { projectId: project.id } });
+    def.wo.projectId = project.id;
+    for (const co of def.changeOrders) {
+      const approved = co.status === "APPROVED";
+      const created = await db.changeOrder.create({
+        data: { projectId: project.id, number: co.number, title: co.title, amountCents: co.amountCents, statusId: coStatuses.get(co.status)!, requestedAt: dateOnly(-20), approvedAt: approved ? dateOnly(-14) : null },
+      });
+      if (approved && co.amountCents > 0) {
+        await db.scheduleOfValuesLine.create({ data: { projectId: project.id, description: `${co.number}: ${co.title}`, scheduledValueCents: co.amountCents, sortOrder: 100, changeOrderId: created.id } });
+      }
+    }
+    if (def.claim) {
+      const lines = project.sovLines.map((l, i) => ({ sovLineId: l.id, scheduledValueCents: l.scheduledValueCents, percentCompleteBp: def.claim![i], previouslyBilledCents: 0 }));
+      const t = progressInvoiceTotals(lines, project.holdbackBp, gstPst);
+      progressInvoices++;
+      await db.invoice.create({
+        data: {
+          number: `INV-${pad(billable.length + progressInvoices, 6)}`,
+          kind: "PROGRESS",
+          projectId: project.id,
+          customerId: project.customerId,
+          jobSiteId: project.jobSiteId,
+          statusId: invoiceStatuses.get("SENT")!,
+          paymentTermId: terms.get("NET30"),
+          taxLevelId: taxLevels.get("GST_PST"),
+          invoiceDate: dateOnly(-10),
+          dueDate: dateOnly(20),
+          postedAt: daysFromNow(-10),
+          notes: "Progress claim #1",
+          subtotalCents: t.workThisPeriodCents,
+          holdbackBp: project.holdbackBp,
+          holdbackCents: t.holdbackCents,
+          taxCents: t.totals.taxCents,
+          totalCents: t.amountDueCents,
+          taxes: { create: t.totals.taxes.map(({ code, label, rateBp, taxableCents, taxCents }) => ({ code, label, rateBp, taxableCents, taxCents })) },
+          progressLines: {
+            create: lines.map((l) => ({ ...l, thisPeriodCents: progressLine(l).thisPeriodCents })),
+          },
+        },
+      });
+    }
+  }
+
+  // This week's crew schedule (weekdays, 7:00–15:30) for the field staff on open work.
+  const openWork = workOrders.filter((w) => ["SCHEDULED", "DISPATCHED", "IN_PROGRESS"].includes(w.def.status));
+  for (let d = -3; d <= 4; d++) {
+    const day = daysFromNow(d, 7);
+    if (day.getDay() === 0 || day.getDay() === 6) continue;
+    for (const [e, employee] of employees.entries()) {
+      const wo = openWork[(e + d + 10) % openWork.length];
+      await db.scheduleEntry.create({
+        data: { employeeId: employee.id, workOrderId: wo.id, projectId: wo.projectId, startsAt: day, endsAt: new Date(day.getTime() + 8.5 * 3600_000) },
+      });
+    }
+  }
+
   // Continue numbering after the seeded documents.
-  const next: Record<string, number> = { WORK_ORDER: WORK_ORDERS.length + 1, QUOTE: quoteDefs.length + 1, INVOICE: billable.length + 1, PURCHASE_ORDER: 3, SERVICE_AGREEMENT: 3 };
+  const next: Record<string, number> = { WORK_ORDER: WORK_ORDERS.length + 1, QUOTE: quoteDefs.length + 1, INVOICE: billable.length + progressInvoices + 1, PURCHASE_ORDER: 3, SERVICE_AGREEMENT: 3, PROJECT: projectDefs.length + 1 };
   for (const [code, nextValue] of Object.entries(next)) {
     await db.sequence.update({ where: { code }, data: { nextValue } });
   }

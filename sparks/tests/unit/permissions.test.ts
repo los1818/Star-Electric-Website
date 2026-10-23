@@ -28,6 +28,13 @@ describe("role permissions", () => {
     }
   });
 
+  it("keeps projects and progress billing with office and admin", () => {
+    for (const p of ["projects:read", "projects:write", "projects:billing"] as const) {
+      expect(can("TECHNICIAN", p)).toBe(false);
+      expect(can("OFFICE", p)).toBe(true);
+    }
+  });
+
   it("never shows prices to technicians", () => {
     expect(can("TECHNICIAN", "pricing:view")).toBe(false);
     expect(can("OFFICE", "pricing:view")).toBe(true);

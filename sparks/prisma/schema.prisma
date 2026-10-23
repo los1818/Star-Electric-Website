@@ -55,6 +55,14 @@ enum InventoryLocationKind {
   TRUCK
 }
 
+/// STANDARD: service/T&M invoice. PROGRESS: project progress claim against the schedule of values.
+/// HOLDBACK_RELEASE: bills holdback retained on earlier progress invoices.
+enum InvoiceKind {
+  STANDARD
+  PROGRESS
+  HOLDBACK_RELEASE
+}
+
 enum ImportRowStatus {
   PENDING
   MAPPED
@@ -79,13 +87,14 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
-  recentItems  RecentItem[]
-  auditLogs    AuditLog[]
-  notes        WorkOrderNote[]
-  attachments  Attachment[]
-  approvedTime TimeEntry[]     @relation("TimeEntryApprovedBy")
+  accounts        Account[]
+  sessions        Session[]
+  recentItems     RecentItem[]
+  auditLogs       AuditLog[]
+  notes           WorkOrderNote[]
+  attachments     Attachment[]
+  approvedTime    TimeEntry[]     @relation("TimeEntryApprovedBy")
+  managedProjects Project[]       @relation("ProjectManager")
 }
 
 model Account {
@@ -197,6 +206,33 @@ model WorkOrderStatusTransition {
   @@unique([fromId, toId])
 }
 
+model ProjectStatus {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  label     String
+  sortOrder Int       @default(0)
+  active    Boolean   @default(true)
+  color     String?
+  isClosed  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+model ChangeOrderStatus {
+  id           String        @id @default(cuid())
+  code         String        @unique
+  label        String
+  sortOrder    Int           @default(0)
+  active       Boolean       @default(true)
+  color        String?
+  /// Approved change orders count toward the revised contract value.
+  isApproved   Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  changeOrders ChangeOrder[]
+}
+
 model Priority {
   id         String      @id @default(cuid())
   code       String      @unique
@@ -296,6 +332,7 @@ model TaxLevel {
   invoices       Invoice[]
   invoiceLines   InvoiceLine[]
   purchaseOrders PurchaseOrder[]
+  projects       Project[]
 }
 
 model TaxLevelComponent {
@@ -439,6 +476,7 @@ model Customer {
   quotes            Quote[]
   invoices          Invoice[]
   serviceAgreements ServiceAgreement[]
+  projects          Project[]
 
   @@index([name])
 }
@@ -490,6 +528,7 @@ model JobSite {
   invoices          Invoice[]
   equipment         Equipment[]
   serviceAgreements ServiceAgreementSite[]
+  projects          Project[]
 
   @@index([customerId])
 }
@@ -512,10 +551,11 @@ model Employee {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  user        User?
-  assignments WorkOrderAssignment[]
-  timeEntries TimeEntry[]
-  truck       InventoryLocation?
+  user            User?
+  assignments     WorkOrderAssignment[]
+  timeEntries     TimeEntry[]
+  scheduleEntries ScheduleEntry[]
+  truck           InventoryLocation?
 }
 
 model Vendor {
@@ -572,16 +612,19 @@ model WorkOrder {
   quote              Quote?            @relation(fields: [quoteId], references: [id], onDelete: SetNull)
   serviceAgreementId String?
   serviceAgreement   ServiceAgreement? @relation(fields: [serviceAgreementId], references: [id], onDelete: SetNull)
+  projectId          String?
+  project            Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
-  assignments    WorkOrderAssignment[]
-  notes          WorkOrderNote[]
-  timeEntries    TimeEntry[]
-  materials      MaterialUsage[]
-  invoices       InvoiceWorkOrder[]
-  purchaseOrders PurchaseOrder[]
-  equipment      WorkOrderEquipment[]
+  assignments     WorkOrderAssignment[]
+  notes           WorkOrderNote[]
+  timeEntries     TimeEntry[]
+  materials       MaterialUsage[]
+  invoices        InvoiceWorkOrder[]
+  purchaseOrders  PurchaseOrder[]
+  equipment       WorkOrderEquipment[]
+  scheduleEntries ScheduleEntry[]
 
   @@index([statusId])
   @@index([customerId])
@@ -621,6 +664,130 @@ model WorkOrderEquipment {
 }
 
 // ---------------------------------------------------------------------------
+// Projects: contracts, change orders, schedule of values, progress billing
+// ---------------------------------------------------------------------------
+
+/// A contract job above work orders: contract value, change orders, a schedule of values for
+/// progress billing, and holdback. Work orders, quotes, invoices, POs and schedules can belong to it.
+model Project {
+  id                    String        @id @default(cuid())
+  legacyRef             String?       @unique
+  number                String        @unique
+  name                  String
+  customerId            String
+  customer              Customer      @relation(fields: [customerId], references: [id])
+  jobSiteId             String?
+  jobSite               JobSite?      @relation(fields: [jobSiteId], references: [id])
+  statusId              String
+  status                ProjectStatus @relation(fields: [statusId], references: [id])
+  managerId             String?
+  manager               User?         @relation("ProjectManager", fields: [managerId], references: [id], onDelete: SetNull)
+  taxLevelId            String?
+  taxLevel              TaxLevel?     @relation(fields: [taxLevelId], references: [id])
+  contractNumber        String?
+  customerPoNumber      String?
+  /// Contract value before change orders.
+  originalContractCents Int           @default(0)
+  /// Holdback retained on progress invoices, basis points (SK Builders' Lien Act: 10% = 1000).
+  holdbackBp            Int           @default(1000)
+  startDate             DateTime?     @db.Date
+  substantialCompletion DateTime?     @db.Date
+  completedAt           DateTime?     @db.Date
+  notes                 String?       @db.Text
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  changeOrders    ChangeOrder[]
+  sovLines        ScheduleOfValuesLine[]
+  workOrders      WorkOrder[]
+  quotes          Quote[]
+  invoices        Invoice[]
+  purchaseOrders  PurchaseOrder[]
+  scheduleEntries ScheduleEntry[]
+
+  @@index([customerId])
+}
+
+model ChangeOrder {
+  id                String            @id @default(cuid())
+  legacyRef         String?           @unique
+  projectId         String
+  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Per project, e.g. CO-001.
+  number            String
+  title             String
+  description       String?           @db.Text
+  /// Change to the contract value (negative for credits).
+  amountCents       Int
+  statusId          String
+  status            ChangeOrderStatus @relation(fields: [statusId], references: [id])
+  customerReference String?
+  requestedAt       DateTime          @default(now()) @db.Date
+  approvedAt        DateTime?         @db.Date
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  sovLines ScheduleOfValuesLine[]
+
+  @@unique([projectId, number])
+}
+
+/// Line of a project's schedule of values: what progress invoices bill against.
+model ScheduleOfValuesLine {
+  id                  String                @id @default(cuid())
+  projectId           String
+  project             Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sortOrder           Int                   @default(0)
+  description         String
+  scheduledValueCents Int
+  /// Set when the line was added by an approved change order.
+  changeOrderId       String?
+  changeOrder         ChangeOrder?          @relation(fields: [changeOrderId], references: [id], onDelete: SetNull)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  progressLines       InvoiceProgressLine[]
+}
+
+/// One schedule-of-values line on a progress invoice. Amounts are snapshots at billing time.
+model InvoiceProgressLine {
+  id                    String               @id @default(cuid())
+  invoiceId             String
+  invoice               Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  sovLineId             String
+  sovLine               ScheduleOfValuesLine @relation(fields: [sovLineId], references: [id])
+  scheduledValueCents   Int
+  /// Percent complete to date, basis points (65% = 6500).
+  percentCompleteBp     Int
+  previouslyBilledCents Int
+  thisPeriodCents       Int
+
+  @@unique([invoiceId, sovLineId])
+}
+
+// ---------------------------------------------------------------------------
+// Scheduling
+// ---------------------------------------------------------------------------
+
+/// A block of an electrician's schedule (dispatch board / crew calendar). Replaces paper schedules.
+model ScheduleEntry {
+  id          String     @id @default(cuid())
+  legacyRef   String?    @unique
+  employeeId  String
+  employee    Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  workOrderId String?
+  workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  projectId   String?
+  project     Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  startsAt    DateTime
+  endsAt      DateTime
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([employeeId, startsAt])
+}
+
+// ---------------------------------------------------------------------------
 // Time and materials
 // ---------------------------------------------------------------------------
 
@@ -639,6 +806,11 @@ model TimeEntry {
   laborRate       LaborRate?        @relation(fields: [laborRateId], references: [id])
   /// Hours in hundredths (7.5 h = 750).
   hoursHundredths Int
+  /// Optional clock-in/out times from the phone; hours remain the billable/payable figure.
+  startTime       DateTime?
+  endTime         DateTime?
+  /// When the electrician submitted the entry (their week) for approval.
+  submittedAt     DateTime?
   description     String?
   approvedById    String?
   approvedBy      User?             @relation("TimeEntryApprovedBy", fields: [approvedById], references: [id])
@@ -688,6 +860,8 @@ model Quote {
   customer         Customer     @relation(fields: [customerId], references: [id])
   jobSiteId        String?
   jobSite          JobSite?     @relation(fields: [jobSiteId], references: [id])
+  projectId        String?
+  project          Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   statusId         String
   status           QuoteStatus  @relation(fields: [statusId], references: [id])
   taxLevelId       String?
@@ -744,6 +918,9 @@ model Invoice {
   customer         Customer      @relation(fields: [customerId], references: [id])
   jobSiteId        String?
   jobSite          JobSite?      @relation(fields: [jobSiteId], references: [id])
+  projectId        String?
+  project          Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  kind             InvoiceKind   @default(STANDARD)
   statusId         String
   status           InvoiceStatus @relation(fields: [statusId], references: [id])
   paymentTermId    String?
@@ -769,14 +946,19 @@ model Invoice {
   taxCents         Int           @default(0)
   totalCents       Int           @default(0)
   paidCents        Int           @default(0)
+  /// Holdback rate applied on a progress invoice, basis points.
+  holdbackBp       Int           @default(0)
+  /// Holdback retained on this invoice (not yet due). Tax on it is charged when it's released.
+  holdbackCents    Int           @default(0)
   notes            String?       @db.Text
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  lines      InvoiceLine[]
-  taxes      InvoiceTax[]
-  payments   Payment[]
-  workOrders InvoiceWorkOrder[]
+  lines         InvoiceLine[]
+  taxes         InvoiceTax[]
+  payments      Payment[]
+  workOrders    InvoiceWorkOrder[]
+  progressLines InvoiceProgressLine[]
 
   @@index([customerId])
   @@index([statusId])
@@ -927,6 +1109,8 @@ model PurchaseOrder {
   status           PurchaseOrderStatus @relation(fields: [statusId], references: [id])
   workOrderId      String?
   workOrder        WorkOrder?          @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  projectId        String?
+  project          Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
   shipToLocationId String?
   shipToLocation   InventoryLocation?  @relation(fields: [shipToLocationId], references: [id])
   taxLevelId       String?

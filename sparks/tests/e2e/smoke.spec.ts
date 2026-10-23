@@ -45,6 +45,8 @@ test("technicians only see their modules and are blocked from others", async ({ 
 
   await page.goto("/invoices");
   await expect(page).toHaveURL(/\/forbidden$/);
+  await page.goto("/projects");
+  await expect(page).toHaveURL(/\/forbidden$/);
   await page.goto("/settings/tax-levels");
   await expect(page).toHaveURL(/\/forbidden$/);
 });
@@ -115,4 +117,20 @@ test("administrator sets markup tiers and quotes show the suggested markup", asy
   await page.getByRole("textbox", { name: "Tier 2 markup" }).fill("25");
   await page.getByRole("button", { name: "Save tiers" }).click();
   await expect(page.getByText("Saved")).toBeVisible();
+});
+
+test("projects show the revised contract, and progress invoices show holdback", async ({ page }) => {
+  await loginAs(page, "Olivia Office");
+  await page.goto("/search?q=P-0001");
+  await page.getByRole("main").getByRole("link", { name: /P-0001/ }).click();
+  // $248,500 original + $7,850 approved CO; the $12,400 CO is still pending.
+  await expect(page.getByText("$256,350.00")).toBeVisible();
+  await expect(page.getByText("$12,400.00", { exact: true })).toBeVisible();
+  await expect(page.getByText("10% · $8,600.00 held")).toBeVisible();
+
+  await page.goto("/search?q=INV-000006");
+  await page.getByRole("main").getByRole("link", { name: /INV-000006/ }).click();
+  await expect(page.getByText("Progress claim")).toBeVisible();
+  await expect(page.getByText("$86,000.00")).toBeVisible();
+  await expect(page.getByText("$85,914.00")).toBeVisible();
 });

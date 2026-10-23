@@ -23,15 +23,21 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
       fields={[
         { label: "Customer", value: i.customer.name },
         { label: "Status", value: i.status.label },
+        ...(i.kind !== "STANDARD" ? [{ label: "Type", value: i.kind === "PROGRESS" ? "Progress claim" : "Holdback release" }] : []),
         { label: "Invoice date", value: i.invoiceDate.toISOString().slice(0, 10) },
-        { label: "Material cost", value: formatCents(materialCost) },
-        {
-          label: "Material markup",
-          value: `${formatPercentBp(i.materialMarkupBp)}${suggested !== null && suggested !== i.materialMarkupBp ? ` (suggested ${formatPercentBp(suggested)})` : suggested !== null ? " (suggested)" : ""}`,
-        },
-        { label: "Subtotal", value: formatCents(i.subtotalCents) },
+        ...(i.kind === "STANDARD"
+          ? [
+              { label: "Material cost", value: formatCents(materialCost) },
+              {
+                label: "Material markup",
+                value: `${formatPercentBp(i.materialMarkupBp)}${suggested !== null && suggested !== i.materialMarkupBp ? ` (suggested ${formatPercentBp(suggested)})` : suggested !== null ? " (suggested)" : ""}`,
+              },
+            ]
+          : []),
+        { label: i.kind === "PROGRESS" ? "Work this period" : "Subtotal", value: formatCents(i.subtotalCents) },
         ...i.taxes.map((t) => ({ label: t.label, value: formatCents(t.taxCents) })),
-        { label: "Total", value: formatCents(i.totalCents) },
+        ...(i.holdbackCents ? [{ label: `Holdback retained (${(i.holdbackBp / 100).toFixed(0)}%)`, value: formatCents(i.holdbackCents) }] : []),
+        { label: i.holdbackCents ? "Amount due now" : "Total", value: formatCents(i.totalCents) },
         { label: "Paid", value: formatCents(i.paidCents) },
       ]}
     />
