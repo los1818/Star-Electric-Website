@@ -166,8 +166,8 @@ status, mapped entity/id). Generic because the Trimble table list isn't known ye
 - **Suggested markup by job size.** `MarkupTier` rows ("material cost from $X → Y%") are edited by admins in
   Settings → Markup tiers. A document's total material cost picks the highest tier it reaches, and that markup
   is the starting point on new quotes/invoices (Phase 4); it's shown beside the markup actually used.
-  The first tier must start at $0. Seeded tiers are placeholders: $0 → 35%, $1,000 → 25%, $5,000 → 15%.
-  **[OPEN: Star Electric's real tiers]**
+  The first tier must start at $0. Seeded with typical trade starting points until Star Electric sets its own:
+  $0 → 40%, $1,000 → 30%, $5,000 → 20%, $25,000 → 15%. **[OPEN: Star Electric's real tiers]**
 - Materials logged on a work order record their cost at the time they're used; their sell price is set when
   they're billed on an invoice. Labour is still priced from the labour rate table.
 
@@ -249,4 +249,5 @@ No cut-off date.
 | 2026-10-22 | Migrate all Trimble history (customers, jobs, current projects, inventory); records keep a `legacyRef`. |
 | 2026-10-23 | Projects added above work orders: contract, change orders, SOV, progress billing, 10% holdback default. |
 | 2026-10-23 | Electricians' time entry and crew schedules move to Phase 2; ServiceBox import covers time and schedules. |
+| 2026-10-23 | Default markup tiers set to typical trade values (40/30/20/15% at $0/$1k/$5k/$25k) pending Star's own. |
 | 2026-10-22 | App renamed from "Star FieldOps" to **Sparks**; folder `fieldops/` → `sparks/`. |

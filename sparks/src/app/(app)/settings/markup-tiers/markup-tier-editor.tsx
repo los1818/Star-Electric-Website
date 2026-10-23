@@ -89,7 +89,7 @@ export function MarkupTierEditor({ initial }: { initial: MarkupTierInput[] }) {
         {message && <span className="text-sm text-gray-700">{message}</span>}
       </div>
       <p className="mt-4 text-xs text-gray-500">
-        Example: with tiers at $0 → 35% and $5,000 → 15%, a job with {formatCents(600_000)} of material starts at 15%.
+        Example: with tiers at $0 → 40% and $5,000 → 20%, a job with {formatCents(600_000)} of material starts at 20%.
       </p>
     </div>
   );

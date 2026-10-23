@@ -184,11 +184,13 @@ export const EQUIPMENT_TYPES = withOrder([
   { code: "EV_CHARGER", label: "EV Charger" },
 ]);
 
-// Placeholder tiers until Star Electric sets its own in Settings → Markup tiers.
+// Typical electrical-contractor starting points (higher on small service work, lower on large
+// projects) until Star Electric sets its own in Settings → Markup tiers.
 export const MARKUP_TIERS = [
-  { minMaterialCostCents: 0, markupBp: 3500 },
-  { minMaterialCostCents: 100_000, markupBp: 2500 },
-  { minMaterialCostCents: 500_000, markupBp: 1500 },
+  { minMaterialCostCents: 0, markupBp: 4000 }, // service calls, small jobs
+  { minMaterialCostCents: 100_000, markupBp: 3000 }, // $1,000+
+  { minMaterialCostCents: 500_000, markupBp: 2000 }, // $5,000+
+  { minMaterialCostCents: 2_500_000, markupBp: 1500 }, // $25,000+ (projects)
 ];
 
 export const SEQUENCES = [
