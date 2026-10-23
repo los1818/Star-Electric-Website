@@ -218,7 +218,7 @@ No cut-off date.
 ## 8. Phased plan
 - **Phase 0: Foundation.** Scaffold, full schema, auth + roles, app shell, seed data, lookup
   tables, Trimble ETL stub, tests.
-- **Phase 1: Core records.** Customers, contacts, job sites, employees, vendors; Settings UI for lookups; global search; recent items;
+- **Phase 1: Core records.** *(Done 2026-10-23 except the ServiceBox import, which waits on the export.)* Customers, contacts, job sites, employees, vendors; Settings UI for lookups; global search; recent items;
   ServiceBox CSV import of customers, job sites and contacts.
 - **Phase 2: Work orders, projects, schedules and time.** WO CRUD and lifecycle; projects and change orders;
   dispatch board / crew schedules; technician mobile view with schedule, **time entry and submission**
@@ -250,4 +250,6 @@ No cut-off date.
 | 2026-10-23 | Projects added above work orders: contract, change orders, SOV, progress billing, 10% holdback default. |
 | 2026-10-23 | Electricians' time entry and crew schedules move to Phase 2; ServiceBox import covers time and schedules. |
 | 2026-10-23 | Default markup tiers set to typical trade values (40/30/20/15% at $0/$1k/$5k/$25k) pending Star's own. |
+| 2026-10-23 | Adding/editing employees is admin-only (office can view). Employees and vendors are deactivated, never deleted. |
+| 2026-10-23 | All times are Regina time (UTC−6 year-round, no DST). |
 | 2026-10-22 | App renamed from "Star FieldOps" to **Sparks**; folder `fieldops/` → `sparks/`. |
