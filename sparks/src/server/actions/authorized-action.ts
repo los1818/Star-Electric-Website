@@ -9,6 +9,13 @@ import { requireAuthenticated, requirePermission, type CurrentUser } from "@/lib
 /** Throw from a handler to return a message to the user instead of a generic failure. */
 export class ActionError extends Error {}
 
+/** Throw from a form handler when validation depends on the input (e.g. per-table rules). */
+export class ValidationError extends ActionError {
+  constructor(public readonly fieldErrors: FieldErrors) {
+    super("Please fix the highlighted fields.");
+  }
+}
+
 export type ActionResult<T = void> = { ok: true; data: T } | { ok: false; error: string };
 
 /**
@@ -76,6 +83,7 @@ export function authorizedFormAction<S extends z.ZodTypeAny>(
       redirectTo = result.redirectTo;
     } catch (error) {
       if (error instanceof ForbiddenError) return { error: "You don't have permission to do that.", values, attempt };
+      if (error instanceof ValidationError) return { error: error.message, fieldErrors: error.fieldErrors, values, attempt };
       if (error instanceof ActionError) return { error: error.message, values, attempt };
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         return { error: "That value is already used by another record.", values, attempt };
