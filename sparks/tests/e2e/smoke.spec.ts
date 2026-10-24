@@ -133,9 +133,10 @@ test("projects show the revised contract, and progress invoices show holdback", 
   await page.goto("/search?q=P-0001");
   await page.getByRole("main").getByRole("link", { name: /P-0001/ }).click();
   // $248,500 original + $7,850 approved CO; the $12,400 CO is still pending.
-  await expect(page.getByText("$256,350.00")).toBeVisible();
+  await expect(page.getByText("$256,350.00").first()).toBeVisible();
   await expect(page.getByText("$12,400.00", { exact: true })).toBeVisible();
-  await expect(page.getByText("10% · $8,600.00 held")).toBeVisible();
+  await expect(page.getByText("Holdback held (10%)")).toBeVisible();
+  await expect(page.getByText("$8,600.00").first()).toBeVisible();
 
   await page.goto("/search?q=INV-000006");
   await page.getByRole("main").getByRole("link", { name: /INV-000006/ }).click();

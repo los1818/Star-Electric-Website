@@ -52,6 +52,7 @@ export interface NewMenuItem {
 
 export const NEW_MENU_ITEMS: NewMenuItem[] = [
   { type: "work-order", label: "Work order", permission: "workorders:write", href: "/work-orders/new" },
+  { type: "project", label: "Project", permission: "projects:write", href: "/projects/new" },
   { type: "quote", label: "Quote", permission: "quotes:write", href: "/new/quote" },
   { type: "invoice", label: "Invoice", permission: "invoices:write", href: "/new/invoice" },
   { type: "customer", label: "Customer", permission: "customers:write", href: "/customers/new" },
