@@ -6,6 +6,9 @@ param([switch]$ResetDemo)
 # (docker, npm) into terminating errors under "Stop". Exit codes are checked explicitly instead.
 $ErrorActionPreference = "Continue"
 Set-Location (Join-Path $PSScriptRoot "..")
+# Sparks always uses this port, so it never collides with (or gets mistaken for) another app
+# on the usual 3000/3001.
+$Port = 3100
 
 function Say($msg) { Write-Host "`n==> $msg" -ForegroundColor Yellow }
 function Fail($msg) { Write-Host "`nProblem: $msg`n" -ForegroundColor Red; Read-Host "Press Enter to close"; exit 1 }
@@ -27,6 +30,17 @@ if (-not (Test-Path ".env")) {
   [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
   $secret = [Convert]::ToBase64String($bytes)
   (Get-Content ".env.example" -Raw) -replace '(?m)^AUTH_SECRET=.*$', "AUTH_SECRET=`"$secret`"" | Set-Content ".env" -NoNewline -Encoding utf8
+}
+
+# Sign-in links follow whatever address you open Sparks at (so phones on the same Wi-Fi work);
+# an AUTH_URL pinned to localhost from an older version would send them back to localhost.
+$envText = Get-Content ".env" -Raw
+if ($envText -match '(?m)^AUTH_URL="?http://localhost') {
+  ($envText -replace '(?m)^AUTH_URL=.*\r?\n?', '') | Set-Content ".env" -NoNewline -Encoding utf8
+}
+
+if (Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue) {
+  Fail "Something is already using port $Port. If Sparks is already running in another window, use that one (http://localhost:$Port). Otherwise close the other program and run this again."
 }
 
 Say "Installing app components (first time takes a few minutes)"
@@ -55,9 +69,12 @@ if ($ResetDemo -or $empty) {
 # Open the browser once the app answers.
 Start-Job -ScriptBlock {
   for ($i = 0; $i -lt 120; $i++) {
-    try { Invoke-WebRequest "http://localhost:3000/login" -UseBasicParsing -TimeoutSec 2 | Out-Null; Start-Process "http://localhost:3000"; return } catch { Start-Sleep -Seconds 2 }
+    try { Invoke-WebRequest "http://localhost:$using:Port/login" -UseBasicParsing -TimeoutSec 2 | Out-Null; Start-Process "http://localhost:$using:Port"; return } catch { Start-Sleep -Seconds 2 }
   }
 } | Out-Null
 
-Say "Sparks is starting at http://localhost:3000  (leave this window open; press Ctrl+C to stop)"
-npm run dev
+$lan = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.PrefixOrigin -in "Dhcp", "Manual" -and $_.IPAddress -notlike "169.254.*" } | Select-Object -First 1).IPAddress
+Say "Sparks is starting at http://localhost:$Port  (leave this window open; press Ctrl+C to stop)"
+if ($lan) { Write-Host "    From a phone or another computer on the same network: http://${lan}:$Port" -ForegroundColor Yellow }
+# -p: a fixed port (fails rather than quietly moving to another one); -H: reachable on the local network.
+Run "npx" @("next", "dev", "-p", "$Port", "-H", "0.0.0.0")

@@ -34,7 +34,11 @@ When the build is done, Sparks moves to proper hosting (Azure) and this local co
 3. A black window opens and works through these steps:
    creating settings → installing app components → starting the database → updating the database →
    loading demo data. **The first time takes 3–5 minutes**; after that, about 30 seconds.
-4. Your browser opens **http://localhost:3000** by itself. If it doesn't, open that address yourself.
+4. Your browser opens **http://localhost:3100** by itself. If it doesn't, open that address yourself.
+   Sparks always uses port **3100**, so it won't clash with other programs on 3000 or 3001.
+   To try it on your phone, connect the phone to the same Wi-Fi and open the "From a phone" address
+   the window shows (like `http://192.168.0.40:3100`). The first time, Windows may ask whether to allow
+   Node.js on private networks: click **Allow**.
 5. Sign in by clicking one of the **Development login** names:
 
    | Click | You see Sparks as |
