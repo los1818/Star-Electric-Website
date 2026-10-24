@@ -59,6 +59,25 @@ function useField(name: string, fallback: string | null | undefined) {
   };
 }
 
+/** A field's starting value (what was submitted after an error, else `fallback`) and its error, for custom inputs. */
+export function useFormField(name: string, fallback?: string | null) {
+  const f = useField(name, fallback);
+  return { defaultValue: f.defaultValue, error: f.error };
+}
+
+/** Starting values of a multi-value field (checkbox group): the submitted ones after an error, else `fallback`. */
+export function useFormValues(name: string, fallback: string[]): string[] {
+  const f = useField(name, null);
+  if (!f.submittedAnything) return fallback;
+  return f.submitted === undefined ? [] : ([] as string[]).concat(f.submitted as string | string[]);
+}
+
+/** Error message for a field, e.g. to show under a custom input group. */
+export function FieldError({ name }: { name: string }) {
+  const { error } = useField(name, null);
+  return error ? <p className="mt-1 text-xs font-medium text-red-700">{error}</p> : null;
+}
+
 interface FieldShellProps {
   id: string;
   label: string;

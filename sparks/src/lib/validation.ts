@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { parseCents } from "./money";
 import { parsePercentBp } from "./markup";
+import { parseDateOnly, parseReginaDateTimeLocal } from "./time";
 
 /** FormData → plain object. Repeated keys become arrays; unchecked checkboxes are simply absent. */
 export function formDataToObject(formData: FormData): Record<string, unknown> {
@@ -115,3 +116,48 @@ export function fieldErrorsFrom(error: z.ZodError): FieldErrors {
   }
   return out;
 }
+
+/** <input type="datetime-local"> read as Regina time → instant, or null when blank. */
+export const optionalReginaDateTime = (label: string) =>
+  z
+    .preprocess(blankToNull, z.string().nullable().optional())
+    .transform((v, ctx) => {
+      if (!v) return null;
+      const d = parseReginaDateTimeLocal(v);
+      if (!d) {
+        ctx.addIssue({ code: "custom", message: `${label} must be a date and time` });
+        return z.NEVER;
+      }
+      return d;
+    });
+
+/** <input type="date"> → UTC-midnight Date, or null when blank. */
+export const optionalDateOnly = (label: string) =>
+  z
+    .preprocess(blankToNull, z.string().nullable().optional())
+    .transform((v, ctx) => {
+      if (!v) return null;
+      const d = parseDateOnly(v);
+      if (!d) {
+        ctx.addIssue({ code: "custom", message: `${label} must be a date like 2026-10-24` });
+        return z.NEVER;
+      }
+      return d;
+    });
+
+/** Optional amount in cents (blank → null). */
+export const optionalMoney = (label: string) =>
+  z.preprocess(blankToNull, z.string().nullable().optional()).transform((v, ctx) => {
+    if (!v) return null;
+    try {
+      const cents = parseCents(v);
+      if (cents < 0) ctx.addIssue({ code: "custom", message: `${label} can't be negative` });
+      return cents;
+    } catch {
+      ctx.addIssue({ code: "custom", message: `${label} must be an amount like 125.00` });
+      return z.NEVER;
+    }
+  });
+
+/** Checkbox group → array of ids (one value arrives as a string, several as an array). */
+export const idList = z.preprocess((v) => (v === undefined || v === null || v === "" ? [] : ([] as unknown[]).concat(v)), z.array(z.string().min(1)));

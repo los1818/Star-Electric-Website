@@ -40,6 +40,7 @@ export default async function JobSitePage({ params }: { params: Promise<{ id: st
         actions={
           canWrite && (
             <>
+              {can(user.role, "workorders:write") && s.active && <LinkButton href={`/work-orders/new?customerId=${s.customer.id}&jobSiteId=${s.id}`}>+ Work order</LinkButton>}
               <LinkButton href={`/job-sites/${s.id}/edit`} variant="dark">Edit</LinkButton>
               <InlineAction action={setJobSiteActive} fields={s.active ? { id: s.id } : { id: s.id, active: "on" }} label={s.active ? "Deactivate" : "Reactivate"} />
               {can(user.role, "jobsites:delete") && (

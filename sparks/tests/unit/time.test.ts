@@ -20,3 +20,20 @@ describe("Regina time (UTC−6 all year)", () => {
     expect(reginaDayRange(new Date("2026-10-31T18:00:00Z"), 1).start.toISOString()).toBe("2026-11-01T06:00:00.000Z");
   });
 });
+
+describe("form date/time inputs", () => {
+  it("reads datetime-local values as Regina time and writes them back", async () => {
+    const { parseReginaDateTimeLocal, toReginaDateTimeLocal } = await import("@/lib/time");
+    const d = parseReginaDateTimeLocal("2026-10-24T08:30")!;
+    expect(d.toISOString()).toBe("2026-10-24T14:30:00.000Z");
+    expect(toReginaDateTimeLocal(d)).toBe("2026-10-24T08:30");
+    expect(parseReginaDateTimeLocal("2026-13-01T08:00")).toBeNull();
+    expect(parseReginaDateTimeLocal("tomorrow")).toBeNull();
+  });
+  it("parses date-only values strictly", async () => {
+    const { parseDateOnly } = await import("@/lib/time");
+    expect(parseDateOnly("2026-10-24")?.toISOString()).toBe("2026-10-24T00:00:00.000Z");
+    expect(parseDateOnly("2026-02-30")).toBeNull();
+    expect(parseDateOnly("24/10/2026")).toBeNull();
+  });
+});

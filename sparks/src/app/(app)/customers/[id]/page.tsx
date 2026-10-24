@@ -56,6 +56,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         actions={
           canWrite && (
             <>
+              {can(user.role, "workorders:write") && c.active && <LinkButton href={`/work-orders/new?customerId=${c.id}`}>+ Work order</LinkButton>}
               <LinkButton href={`/customers/${c.id}/edit`} variant="dark">Edit</LinkButton>
               <InlineAction
                 action={setCustomerActive}
