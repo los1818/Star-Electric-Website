@@ -104,7 +104,11 @@ All tables have `id` (cuid), `createdAt`, `updatedAt`. Money in integer cents, r
 - `PurchaseOrder` + `PurchaseOrderLine`: vendor, status, work order (optional), lines, received qty
 - `Equipment`: job site, type, make, model, serial, rating (voltage/amps/kVA), install date
 - `ServiceAgreement`: customer, sites, frequency, next due, price, WO template
-- `Attachment`: polymorphic (entity type + id), file key, uploaded by
+- `Attachment`: polymorphic (entity type + id), kind (PHOTO / SIGNATURE / DOCUMENT), caption, signer
+  name, file key, uploaded by. Bytes live in file storage (local folder now, Azure Blob Storage when
+  hosted), never in the database and never at a public URL: `/api/attachments/[id]` checks the viewer
+  can see the parent record and returns 404 otherwise. Uploads are type-checked by their bytes
+  (JPEG/PNG/WebP/HEIC, 15 MB, 10 per upload); phones shrink photos to 2000px before upload.
 - `AuditLog`: user, action, entity, entity id, diff JSON
 - `RecentItem`: user, entity type, entity id, label, viewedAt
 
@@ -253,3 +257,4 @@ No cut-off date.
 | 2026-10-23 | Adding/editing employees is admin-only (office can view). Employees and vendors are deactivated, never deleted. |
 | 2026-10-23 | All times are Regina time (UTC−6 year-round, no DST). |
 | 2026-10-22 | App renamed from "Star FieldOps" to **Sparks**; folder `fieldops/` → `sparks/`. |
+| 2026-10-24 | Work order photos and customer signatures: techs add them to assigned, open WOs and may remove only their own photos; only the office removes signatures. |

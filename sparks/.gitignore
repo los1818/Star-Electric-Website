@@ -14,3 +14,6 @@ scripts/migrate-trimble/reports/
 *.xls
 *.csv
 scripts/*/reports/
+
+# Uploaded photos and signatures (local file storage, see src/server/storage.ts)
+storage/

@@ -62,11 +62,12 @@ export type FormAction = (prev: FormState, formData: FormData) => Promise<FormSt
 /**
  * Like authorizedAction, for <form action>: permission check, then Zod validation with
  * per-field errors, then the handler. Return { redirectTo } to navigate on success.
+ * The handler also gets the raw FormData, for uploaded files (the schema only sees their names).
  */
 export function authorizedFormAction<S extends z.ZodTypeAny>(
   permission: Permission | "authenticated",
   schema: S,
-  handler: (input: z.infer<S>, user: CurrentUser) => Promise<{ redirectTo?: string; message?: string } | void>,
+  handler: (input: z.infer<S>, user: CurrentUser, formData: FormData) => Promise<{ redirectTo?: string; message?: string } | void>,
 ): FormAction {
   return async (prev, formData) => {
     const values = formDataToObject(formData);
@@ -78,7 +79,7 @@ export function authorizedFormAction<S extends z.ZodTypeAny>(
       if (!parsed.success) {
         return { error: "Please fix the highlighted fields.", fieldErrors: fieldErrorsFrom(parsed.error), values, attempt };
       }
-      const result = await handler(parsed.data, user);
+      const result = await handler(parsed.data, user, formData);
       if (!result?.redirectTo) return { ok: true, message: result?.message ?? "Saved", values, attempt };
       redirectTo = result.redirectTo;
     } catch (error) {

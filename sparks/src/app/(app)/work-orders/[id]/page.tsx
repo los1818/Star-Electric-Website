@@ -7,11 +7,15 @@ import { PageHeader } from "@/components/ui/page-header";
 import { RefreshRecentItems } from "@/components/refresh-recent-items";
 import { can } from "@/lib/auth/permissions";
 import { requirePageAccess } from "@/lib/auth/server";
+import { db } from "@/lib/db";
 import { formatCents, formatHours, lineAmountCents } from "@/lib/money";
 import { formatDateTime, formatTime } from "@/lib/time";
+import { InlineAction } from "@/components/ui/inline-action";
+import { deleteAttachment, saveWorkOrderSignature, uploadWorkOrderPhotos } from "@/server/actions/attachments";
 import { addWorkOrderNote, changeWorkOrderStatus } from "@/server/actions/work-orders";
 import { recordRecentItem } from "@/server/recent";
 import { allowedNextStatuses, findVisibleWorkOrder } from "@/server/work-orders";
+import { PhotoUploadForm, SignatureForm } from "../attachment-forms";
 import { NoteForm } from "../note-form";
 import { StatusChanger } from "../status-changer";
 
@@ -36,7 +40,16 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
   if (!w) notFound();
   await recordRecentItem(user.id, { entityType: "Work order", entityId: w.id, label: `${w.number} ${w.summary}`, href: `/work-orders/${w.id}` });
 
+  const attachments = await db.attachment.findMany({
+    where: { entityType: "WorkOrder", entityId: w.id, kind: { in: ["PHOTO", "SIGNATURE"] } },
+    include: { uploadedBy: { select: { name: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  const photos = attachments.filter((a) => a.kind === "PHOTO");
+  const signatures = attachments.filter((a) => a.kind === "SIGNATURE");
+
   const canEdit = can(user.role, "workorders:write");
+  const canAdd = can(user.role, "workorders:add_notes") && (!w.status.isClosed || canEdit);
   const showPrices = can(user.role, "pricing:view");
   const nextStatuses = can(user.role, "workorders:update_status") ? await allowedNextStatuses(user, w.statusId) : [];
   const totalHours = w.timeEntries.reduce((s, t) => s + t.hoursHundredths, 0);
@@ -130,6 +143,50 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
               ))}
             </ul>
             {can(user.role, "workorders:add_notes") && <NoteForm action={addWorkOrderNote} workOrderId={w.id} allowCustomerVisible={canEdit} />}
+          </Card>
+
+          <Card title={`Photos (${photos.length})`}>
+            {photos.length === 0 ? (
+              <p className="text-sm text-muted">No photos yet.</p>
+            ) : (
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {photos.map((p) => (
+                  <li key={p.id} className="text-xs">
+                    <a href={`/api/attachments/${p.id}`} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-md bg-surface">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- served through the permission-checked route */}
+                      <img src={`/api/attachments/${p.id}`} alt={p.caption ?? p.fileName} loading="lazy" className="aspect-[4/3] w-full object-cover" />
+                    </a>
+                    {p.caption && <p className="mt-1 font-semibold">{p.caption}</p>}
+                    <p className="text-muted">{p.uploadedBy.name ?? "Someone"} · {formatDateTime(p.createdAt)}</p>
+                    {canAdd && (canEdit || p.uploadedById === user.id) && <InlineAction action={deleteAttachment} fields={{ id: p.id }} label="Remove" confirm="Remove this photo?" />}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {canAdd && <PhotoUploadForm action={uploadWorkOrderPhotos} workOrderId={w.id} />}
+          </Card>
+
+          <Card title="Customer sign-off">
+            {signatures.length === 0 ? (
+              <p className="text-sm text-muted">Not signed yet.</p>
+            ) : (
+              <ul className="space-y-4">
+                {signatures.map((s) => (
+                  <li key={s.id} className="text-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- served through the permission-checked route */}
+                    <img src={`/api/attachments/${s.id}`} alt={`Signature of ${s.signerName}`} className="h-24 max-w-full rounded-md border border-gray-200 bg-white" />
+                    <p className="mt-1">
+                      Signed by <span className="font-semibold">{s.signerName}</span> · {formatDateTime(s.createdAt)}
+                      <span className="text-muted"> (collected by {s.uploadedBy.name ?? "someone"})</span>
+                    </p>
+                    {canEdit && <InlineAction action={deleteAttachment} fields={{ id: s.id }} label="Remove" confirm="Remove this signature?" />}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {canAdd && (
+              <SignatureForm action={saveWorkOrderSignature} workOrderId={w.id} defaultSigner={w.contact ? `${w.contact.firstName} ${w.contact.lastName}` : undefined} />
+            )}
           </Card>
 
           <Card title={`Time (${formatHours(totalHours)} h)`}>

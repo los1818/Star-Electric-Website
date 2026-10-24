@@ -1205,11 +1205,17 @@ model ServiceAgreementSite {
 // Cross-cutting
 // ---------------------------------------------------------------------------
 
-/// Polymorphic file attachment (photo, PDF, signature).
+/// Polymorphic file attachment (photo, PDF, signature). Bytes live in file storage
+/// (src/server/storage.ts) under `storageKey`; only metadata is in the database.
 model Attachment {
   id           String   @id @default(cuid())
   entityType   String
   entityId     String
+  /// PHOTO | SIGNATURE | DOCUMENT (fixed by code, not a lookup: behaviour differs per kind)
+  kind         String   @default("DOCUMENT")
+  caption      String?
+  /// Who signed, for SIGNATURE attachments.
+  signerName   String?
   fileName     String
   contentType  String
   sizeBytes    Int
@@ -1218,7 +1224,7 @@ model Attachment {
   uploadedBy   User     @relation(fields: [uploadedById], references: [id])
   createdAt    DateTime @default(now())
 
-  @@index([entityType, entityId])
+  @@index([entityType, entityId, kind])
 }
 
 model AuditLog {
