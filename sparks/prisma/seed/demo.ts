@@ -401,6 +401,8 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
           laborRateId: wo.lead.laborRateId,
           hoursHundredths: [400, 750, 325, 800][(i + d) % 4],
           description: d === 0 ? "Troubleshoot and diagnose" : "Repairs and testing",
+          // Finished work: submitted and approved. Work in progress: submitted, waiting for approval.
+          submittedAt: daysFromNow(-2),
           approvedById: wo.def.status === "IN_PROGRESS" ? null : office.id,
           approvedAt: wo.def.status === "IN_PROGRESS" ? null : daysFromNow(-1),
         },
