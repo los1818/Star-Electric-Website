@@ -53,6 +53,10 @@ When there's an update, download the ZIP again and extract it to a new folder (f
 `C:\Sparks-new`), then double-click `Start Sparks (Windows).cmd` in its `sparks` folder. Anything
 you entered is kept: demo data is only loaded into an empty database.
 
+**Photos and signatures** are files, kept in the `storage` folder inside `sparks`. Before starting
+the new version, copy that `storage` folder from the old `sparks` folder into the new one, or the
+photos you added will show as broken images.
+
 ## Starting over with fresh demo data
 
 Open the `sparks` folder, click the address bar, type `powershell` and press Enter, then run:

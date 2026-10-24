@@ -15,7 +15,7 @@ test("office creates a customer with a job site, finds it, edits and deactivates
   await loginAs(page, "Olivia Office");
 
   // Create via the New menu, fixing a validation error on the way.
-  await page.getByText("+ New").click();
+  await page.getByText("+ New", { exact: true }).click();
   await page.getByRole("link", { name: "Customer", exact: true }).click();
   await page.getByLabel("Customer name").fill(name);
   await page.getByLabel("Postal code").fill("12345");

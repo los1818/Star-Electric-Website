@@ -11,7 +11,7 @@ const stamp = () => Date.now().toString(36).toUpperCase();
 test("office creates a project, builds its schedule of values and approves a change order", async ({ page }) => {
   const name = `E2E Lab renovation ${stamp()}`;
   await loginAs(page, "Olivia Office");
-  await page.getByText("+ New").click();
+  await page.getByText("+ New", { exact: true }).click();
   await page.getByRole("link", { name: "Project", exact: true }).click();
 
   await page.getByLabel("Project name").fill(name);

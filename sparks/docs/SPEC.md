@@ -224,7 +224,7 @@ No cut-off date.
   tables, Trimble ETL stub, tests.
 - **Phase 1: Core records.** *(Done 2026-10-23 except the ServiceBox import, which waits on the export.)* Customers, contacts, job sites, employees, vendors; Settings UI for lookups; global search; recent items;
   ServiceBox CSV import of customers, job sites and contacts.
-- **Phase 2: Work orders, projects, schedules and time.** WO CRUD and lifecycle; projects and change orders;
+- **Phase 2: Work orders, projects, schedules and time.** *(Done 2026-10-24 except the ServiceBox time/schedule import, which waits on the export.)* WO CRUD and lifecycle; projects and change orders;
   dispatch board / crew schedules; technician mobile view with schedule, **time entry and submission**
   (replaces paper timesheets), notes/photos/signature; office timesheet approval; ServiceBox time/schedule import.
 - **Phase 3: Materials and purchasing.** Material usage on WOs, inventory and stock, POs.
