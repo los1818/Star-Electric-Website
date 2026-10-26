@@ -51,3 +51,18 @@ changing anything.
 - `npm run dev`: dev server on http://localhost:3000
 - `npm test`: Vitest; `npm run test:e2e`: Playwright
 - `npm run lint` / `npm run typecheck`
+
+## Running on the owner's PC (Windows 11)
+The owner doesn't want to run commands; when working on their PC, do it for them.
+- Install: `C:\Sparks\app` (from the zip; not a git clone), launcher `C:\Sparks\sparks.ps1`, desktop
+  icon "Sparks". Start: `powershell -ExecutionPolicy Bypass -File C:\Sparks\sparks.ps1` (updates to the
+  newest version that passed CI, then starts on http://localhost:3100). Needs Docker Desktop running
+  (database on port 55432). Stop: end the `next dev -p 3100` node process.
+- Users: `npx tsx scripts/import-people/index.ts --file <users.csv> --apply` (also runs automatically
+  on start for `sparks-users*.csv` in Downloads/Desktop/Documents or `C:\Sparks\import`).
+- Trimble data: `npx tsx scripts/import-trimble-csv/index.ts --customers <Customers.csv> --jobs <Jobs.csv> --apply --replace-demo`,
+  inventory: `npx tsx scripts/import-accubid-inventory/index.ts --file <inventory.xlsx> --apply`.
+  Dry-run first (drop `--apply`) and read the report in `scripts/*/reports/`.
+- Code changes belong in a git clone of `los1818/Star-Electric-Website` (branch
+  `claude/cool-turing-1117wj`), reviewed by the senior-engineer agent and pushed; the PC picks them up
+  once CI passes. Never commit the owner's files (exports, user lists, reports).
