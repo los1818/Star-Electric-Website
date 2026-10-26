@@ -19,7 +19,9 @@
     "db:studio": "prisma studio",
     "trimble:dry-run": "tsx scripts/migrate-trimble/index.ts --dry-run",
     "user:create": "tsx scripts/create-user.ts",
-    "inventory:import": "tsx scripts/import-accubid-inventory/index.ts"
+    "inventory:import": "tsx scripts/import-accubid-inventory/index.ts",
+    "trimble:import": "tsx scripts/import-trimble-csv/index.ts",
+    "people:import": "tsx scripts/import-people/index.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

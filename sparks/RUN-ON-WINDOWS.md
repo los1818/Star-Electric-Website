@@ -69,6 +69,17 @@ The rest of this page is the manual way.
 **Leave the black window open while you use Sparks.** Close it (or press Ctrl+C in it) to stop Sparks.
 To use it again later: open Docker Desktop, then double-click `Start Sparks (Windows).cmd`.
 
+## Loading your real data (Trimble exports and users)
+
+1. Put the files in **`C:\Sparks\import`** (create the folder if it isn't there):
+   the Trimble **Customers** and **Jobs** CSV exports, and optionally the Accubid **inventory** `.xlsx`
+   and a **users** `.csv` (columns `Name,User Name,Role`, roles `Administrator`, `Office` or `Basic User`).
+2. Double-click **`Import Trimble Data (Windows).cmd`** in `C:\Sparks\app`.
+3. It checks the files first and shows what it found. Type **YES** to load them.
+   The first time, this replaces the demo data. Your admin and office demo logins are kept.
+
+Newer exports later? Drop them in the same folder and run it again: records are updated, never duplicated.
+
 ## Getting a newer version
 
 When there's an update, download the ZIP again and extract it to a new folder (for example
