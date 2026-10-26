@@ -33,7 +33,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         where: { active: true },
         orderBy: [{ role: "asc" }, { name: "asc" }],
         select: { email: true, name: true, role: true },
-        take: 12,
+        take: 50,
       })
     : [];
 

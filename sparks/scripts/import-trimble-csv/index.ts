@@ -90,10 +90,14 @@ function renderReport(files: string[], customers: TCustomer[], sites: TSite[], j
 async function wipeAndReloadLookups(db: PrismaClient) {
   const tables = await db.$queryRaw<{ tablename: string }[]>`
     SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
-  const users = await db.user.findMany({ where: { role: { in: ["ADMIN", "OFFICE"] }, active: true }, select: { email: true, name: true, role: true } });
+  // Keep everyone who can sign in: real users, plus the demo admin and office logins. Employee
+  // records are wiped, so electricians are relinked when the users file is imported again.
+  const users = await db.user.findMany({
+    where: { active: true, OR: [{ email: { not: { endsWith: ".example" } } }, { role: { in: ["ADMIN", "OFFICE"] } }] },
+    select: { email: true, name: true, role: true },
+  });
   await db.$executeRawUnsafe(`TRUNCATE TABLE ${tables.map((t) => `"public"."${t.tablename}"`).join(", ")} RESTART IDENTITY CASCADE`);
   await seedLookups(db);
-  // Keep the people who can sign in (admin and office), so someone can still get in.
   for (const u of users) await db.user.create({ data: { ...u, active: true } });
 }
 

@@ -24,10 +24,12 @@ Write-Host ("  Customers: " + ($(if ($customers) { $customers.Name } else { "not
 Write-Host ("  Jobs:      " + ($(if ($jobs) { $jobs.Name } else { "not found (e.g. Jobs.csv)" })))
 Write-Host ("  Inventory: " + ($(if ($inventory) { $inventory.Name } else { "not found (optional, e.g. inventory.xlsx)" })))
 Write-Host ("  Users:     " + ($(if ($users) { $users.Name } else { "not found (optional, e.g. users.csv)" })))
-if (-not $customers -or -not $jobs) {
+$trimble = $customers -and $jobs
+if (-not $trimble -and -not $users -and -not $inventory) {
   Start-Process explorer.exe $importDir
-  Fail "Put the Trimble Customers and Jobs CSV exports in the folder that just opened ($importDir), then run this again."
+  Fail "Put the files (Trimble Customers and Jobs CSVs, inventory .xlsx, users .csv) in the folder that just opened ($importDir), then run this again."
 }
+if (-not $trimble -and ($customers -or $jobs)) { Fail "The Trimble import needs both the Customers and the Jobs CSV in $importDir." }
 
 docker info *> $null
 if ($LASTEXITCODE -ne 0) { Fail "Docker Desktop isn't running. Open it, wait until it's running, then run this again." }
@@ -38,17 +40,20 @@ Run "npx" @("prisma", "migrate", "deploy")
 Run "npx" @("prisma", "generate")
 
 Say "Checking the files (nothing is changed yet)"
-Run "npx" @("tsx", "scripts/import-trimble-csv/index.ts", "--customers", $customers.FullName, "--jobs", $jobs.FullName)
+if ($trimble) { Run "npx" @("tsx", "scripts/import-trimble-csv/index.ts", "--customers", $customers.FullName, "--jobs", $jobs.FullName) }
 if ($inventory) { Run "npx" @("tsx", "scripts/import-accubid-inventory/index.ts", "--file", $inventory.FullName) }
 if ($users) { Run "npx" @("tsx", "scripts/import-people/index.ts", "--file", $users.FullName) }
 
-Write-Host "`nThis loads your real data into Sparks. The first time, it REPLACES the demo data." -ForegroundColor Yellow
+if ($trimble) { Write-Host "`nThis loads your real data into Sparks. The first time, it REPLACES the demo data." -ForegroundColor Yellow }
+else { Write-Host "`nThis adds the files above to Sparks (the demo data stays)." -ForegroundColor Yellow }
 Write-Host "Reports of anything to check are in the scripts\import-trimble-csv\reports folder."
 $answer = Read-Host "Type YES to go ahead"
 if ($answer -ne "YES") { Write-Host "Nothing was changed."; Read-Host "Press Enter to close"; exit 0 }
 
-Say "Importing customers, job sites, jobs and invoices"
-Run "npx" @("tsx", "scripts/import-trimble-csv/index.ts", "--customers", $customers.FullName, "--jobs", $jobs.FullName, "--apply", "--replace-demo")
+if ($trimble) {
+  Say "Importing customers, job sites, jobs and invoices"
+  Run "npx" @("tsx", "scripts/import-trimble-csv/index.ts", "--customers", $customers.FullName, "--jobs", $jobs.FullName, "--apply", "--replace-demo")
+}
 if ($inventory) { Say "Importing inventory"; Run "npx" @("tsx", "scripts/import-accubid-inventory/index.ts", "--file", $inventory.FullName, "--apply") }
 if ($users) { Say "Adding users"; Run "npx" @("tsx", "scripts/import-people/index.ts", "--file", $users.FullName, "--apply") }
 

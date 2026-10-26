@@ -35,4 +35,4 @@ overall adjustments (e.g. a 10% holdback) become an "Adjustment" line so invoice
 
 Re-running overwrites the Trimble fields on imported records (fine before go-live; after go-live,
 edit in Sparks instead of re-importing). `--replace-demo` wipes the demo data the first time (demo job
-numbers would clash), keeping administrator and office logins.
+numbers would clash), keeping real users and the demo admin and office logins.
