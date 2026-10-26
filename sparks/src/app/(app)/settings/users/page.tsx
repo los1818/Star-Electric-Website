@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requirePageAccess } from "@/lib/auth/server";
+import { Card } from "@/components/ui/card";
+import { addUser, importUsersFile } from "@/server/actions/users";
+import { AddUserForm, ImportUsersForm } from "./add-people";
 import { UserAccessEditor } from "./user-access-editor";
 
 export const metadata = { title: "Users" };
@@ -34,6 +37,14 @@ export default async function UsersPage() {
           {pending} user{pending === 1 ? "" : "s"} waiting for access.
         </p>
       )}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Card title="Add a user">
+          <AddUserForm action={addUser} />
+        </Card>
+        <Card title="Import users from a file">
+          <ImportUsersForm action={importUsersFile} />
+        </Card>
+      </div>
       <UserAccessEditor
         currentUserId={me.id}
         users={users}

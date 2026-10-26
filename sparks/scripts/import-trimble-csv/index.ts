@@ -6,7 +6,7 @@ import { jobSequenceCode } from "../../src/lib/job-numbers";
 import { formatDocumentNumber } from "../../src/lib/numbering";
 import { reginaTime } from "../../src/lib/time";
 import { seedLookups } from "../../prisma/seed/lookups";
-import { mapCustomers, mapJobs, parseCsv, siteKey, type Issue, type IssueKind, type TCustomer, type TJob, type TSite } from "./parse";
+import { mapCustomers, mapJobs, parseCsv, siteKey, type Issue, type IssueKind, type TCustomer, type TJob, type TSite } from "../../src/lib/imports/trimble-csv";
 
 // Import Trimble T&M Billing CSV exports (Customers, Jobs) into Sparks. See README.md.
 

@@ -1,80 +1,33 @@
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
-import { PrismaClient, type Role } from "@prisma/client";
-import { formatDocumentNumber } from "../../src/lib/numbering";
-import { parseCsv } from "../import-trimble-csv/parse";
+import { PrismaClient } from "@prisma/client";
+import { DEFAULT_EMAIL_DOMAIN, parsePeopleCsv } from "../../src/lib/imports/people";
+import { upsertPerson } from "../../src/server/imports/people";
 
 // Create Sparks users (and employee records for electricians) from a CSV kept on your own PC.
+// Easier: Settings → Users → "Import users from a file" in Sparks does the same thing.
 // The list has real names, so it never goes in the repo (*.csv is git-ignored).
 //
 // Columns: Name, User Name, Role[, Email]
-//   Role: Administrator → ADMIN, Office → OFFICE, Basic User / Technician / Electrician → TECHNICIAN
-//   Email: defaults to <User Name>@<--domain> (starelectric.ca)
-// Safe to run again: matches on email and updates name and role.
+//   Role: Administrator / Office Admin → ADMIN, Office → OFFICE, Basic User / Technician → TECHNICIAN
+//   Email: defaults to <User Name>@starelectric.ca
 //
 //   npx tsx scripts/import-people/index.ts --file users.csv [--apply] [--domain starelectric.ca]
 
-const ROLES: Record<string, Role> = {
-  administrator: "ADMIN",
-  admin: "ADMIN",
-  office: "OFFICE",
-  "basic user": "TECHNICIAN",
-  technician: "TECHNICIAN",
-  electrician: "TECHNICIAN",
-};
-
 async function main() {
-  const { values } = parseArgs({ options: { file: { type: "string" }, apply: { type: "boolean", default: false }, domain: { type: "string", default: "starelectric.ca" } } });
+  const { values } = parseArgs({ options: { file: { type: "string" }, apply: { type: "boolean", default: false }, domain: { type: "string", default: DEFAULT_EMAIL_DOMAIN } } });
   if (!values.file) throw new Error("--file is required");
-  const rows = parseCsv(await readFile(values.file, "utf8"));
-  const people = rows.map((r, i) => {
-    const name = (r["Name"] ?? "").trim();
-    const username = (r["User Name"] ?? r["Username"] ?? "").trim().toLowerCase();
-    const role = ROLES[(r["Role"] ?? "").trim().toLowerCase()];
-    const email = ((r["Email"] ?? "").trim() || (username ? `${username}@${values.domain}` : "")).toLowerCase();
-    if (!name || !email.includes("@") || !role) throw new Error(`Row ${i + 2}: needs a Name, a User Name or Email, and a Role (Administrator, Office or Basic User)`);
-    const [firstName, ...rest] = name.split(/\s+/);
-    return { name, firstName, lastName: rest.join(" "), email, username, role };
-  });
-  for (const p of people) console.log(`${p.role.padEnd(10)} ${p.name.padEnd(24)} ${p.email}${p.role === "TECHNICIAN" ? "  + employee record" : ""}`);
+  const { people, errors } = parsePeopleCsv(await readFile(values.file, "utf8"), values.domain);
+  if (errors.length) throw new Error(errors.join("\n"));
+  for (const p of people) console.log(`${p.role.padEnd(10)} ${p.name.padEnd(24)} ${p.email}${p.electrician ? "  + employee record" : ""}`);
   if (!values.apply) {
     console.log(`\nDry run: ${people.length} people. Add --apply to create them.`);
     return;
   }
-
   const db = new PrismaClient();
   try {
-    const journeyperson = await db.trade.findUnique({ where: { code: "JOURNEYPERSON" } });
-    const rate = await db.laborRate.findUnique({ where: { code: "JOURNEYPERSON" } });
-    for (const p of people) {
-      await db.$transaction(async (tx) => {
-        const user = await tx.user.upsert({
-          where: { email: p.email },
-          create: { email: p.email, name: p.name, role: p.role, active: true },
-          update: { name: p.name, role: p.role, active: true },
-        });
-        if (p.role !== "TECHNICIAN" || user.employeeId) return;
-        // Electricians need an employee record to be scheduled and to enter time.
-        const legacyRef = `people:${p.email}`;
-        let employee = await tx.employee.findUnique({ where: { legacyRef } });
-        if (!employee) {
-          const seq = await tx.sequence.update({ where: { code: "EMPLOYEE" }, data: { nextValue: { increment: 1 } } });
-          employee = await tx.employee.create({
-            data: {
-              legacyRef,
-              employeeNumber: formatDocumentNumber(seq.prefix, seq.nextValue - 1, seq.padding),
-              firstName: p.firstName,
-              lastName: p.lastName,
-              email: p.email,
-              tradeId: journeyperson?.id,
-              laborRateId: rate?.id,
-            },
-          });
-        }
-        await tx.user.update({ where: { id: user.id }, data: { employeeId: employee.id } });
-      });
-    }
-    console.log(`\nCreated or updated ${people.length} people. Check trades and labour rates in Employees.`);
+    for (const p of people) await db.$transaction((tx) => upsertPerson(tx, p));
+    console.log(`\nDone: ${people.length} people. Anyone who already had a login kept their role. Check trades and labour rates in Employees.`);
   } finally {
     await db.$disconnect();
   }

@@ -32,6 +32,9 @@ changing anything.
 - When SPEC is ambiguous, ask instead of guessing. If a decision changes, update `docs/SPEC.md`
   in the same commit.
 - Seed data is fake. Use Regina addresses; no real customer names.
+- **Before every push**, have the `senior-engineer` agent (`.claude/agents/senior-engineer.md`) review
+  the change and fix its blockers. The owner's PC installs each push automatically on the next start,
+  so a broken push breaks their app. Never commit real data (exports, user lists, reports).
 
 ## Brand
 - Match starelectric.ca (repo root `style.css`): yellow `#F5C118` (hover `#D4A812`), black `#111111`,

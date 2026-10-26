@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapCustomers, mapJobs, parseCents, parseCsv, parseTrimbleDate, postalCode, provinceCode, taxFor } from "../../scripts/import-trimble-csv/parse";
+import { mapCustomers, mapJobs, parseCents, parseCsv, parseTrimbleDate, postalCode, provinceCode, taxFor } from "@/lib/imports/trimble-csv";
 
 // Made-up rows in the shape of Trimble T&M Billing's Customers and Jobs CSV exports.
 const CUSTOMERS = `﻿"Record_Type","Client Code","Client name","Site Name","Street","City","State","Country","Zip","Telephone","Contact","E-mail","Cell","National Exemption","State Exemption"

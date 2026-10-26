@@ -9,7 +9,7 @@
 $ErrorActionPreference = "Stop"
 $Repo = "los1818/Star-Electric-Website"
 $Branch = "claude/cool-turing-1117wj"
-$Root = "C:\Sparks"
+$Root = if ($env:SPARKS_ROOT) { $env:SPARKS_ROOT } else { "C:\Sparks" } # SPARKS_ROOT: for testing
 $App = Join-Path $Root "app"
 $VersionFile = Join-Path $App ".sparks-version"
 $Launcher = Join-Path $Root "sparks.ps1"
@@ -32,6 +32,11 @@ $current = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw).Trim() 
 $needsUpdate = -not (Test-Path $App) -or ($latest -and $latest -ne $current)
 if (-not (Test-Path $App) -and -not $latest) { throw "Sparks isn't installed yet and GitHub can't be reached. Check the internet connection and try again." }
 
+# Tidy up old versions left by earlier updates, but never one still holding settings or photos.
+Get-ChildItem $Root -Directory -Filter "app-old-*" -ErrorAction SilentlyContinue |
+  Where-Object { -not (Test-Path (Join-Path $_.FullName ".env")) -and -not (Test-Path (Join-Path $_.FullName "storage")) } |
+  ForEach-Object { Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+
 if ($needsUpdate) {
   # Stop any copy of Sparks that's running (from any folder), so files aren't locked.
   Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
@@ -39,37 +44,77 @@ if ($needsUpdate) {
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 
   Say "Downloading the latest Sparks"
-  $tmp = Join-Path $env:TEMP "sparks-download"
-  Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
-  New-Item -ItemType Directory -Force $tmp | Out-Null
+  # Download next to the app (same drive), so folders can be moved instantly and nothing lives in TEMP.
+  $dl = Join-Path $Root "download"
+  Remove-Item $dl -Recurse -Force -ErrorAction SilentlyContinue
+  New-Item -ItemType Directory -Force $dl | Out-Null
   $ref = if ($latest) { $latest } else { $Branch }
-  Invoke-WebRequest "https://github.com/$Repo/archive/$ref.zip" -OutFile (Join-Path $tmp "sparks.zip") -UseBasicParsing
-  Expand-Archive (Join-Path $tmp "sparks.zip") $tmp -Force
-  $fresh = Get-ChildItem $tmp -Directory | ForEach-Object { Join-Path $_.FullName "sparks" } | Where-Object { Test-Path $_ } | Select-Object -First 1
+  Invoke-WebRequest "https://github.com/$Repo/archive/$ref.zip" -OutFile (Join-Path $dl "sparks.zip") -UseBasicParsing
+  Expand-Archive (Join-Path $dl "sparks.zip") $dl -Force
+  $fresh = Get-ChildItem $dl -Directory | ForEach-Object { Join-Path $_.FullName "sparks" } | Where-Object { Test-Path $_ } | Select-Object -First 1
   if (-not $fresh) { throw "The download didn't contain the sparks folder." }
 
-  if (Test-Path $App) {
-    Say "Updating (your settings, photos and data are kept)"
-    # Settings and photos come across; installed components too, so the update starts quickly.
-    foreach ($keep in ".env", "storage") {
-      if (Test-Path (Join-Path $App $keep)) { Copy-Item (Join-Path $App $keep) (Join-Path $fresh $keep) -Recurse -Force }
-    }
-    if (Test-Path (Join-Path $App "node_modules")) { Move-Item (Join-Path $App "node_modules") (Join-Path $fresh "node_modules") -ErrorAction SilentlyContinue }
-    $old = "$App-old-$(Get-Date -Format yyyyMMddHHmmss)"
-    Rename-Item $App $old
-    Start-Job -ScriptBlock { param($p) Remove-Item $p -Recurse -Force -ErrorAction SilentlyContinue } -ArgumentList $old | Out-Null
-  } else {
+  if (-not (Test-Path $App)) {
     Say "Installing to C:\Sparks\app"
+    Move-Item $fresh $App
+  } else {
+    Say "Updating (your settings, photos and data are kept)"
+    # 1. Set the current version aside. If Windows won't let go of it (a window open on the folder,
+    #    antivirus), stop here and start the version you have: nothing has been touched yet.
+    $old = "$App-old-$(Get-Date -Format yyyyMMddHHmmss)"
+    try {
+      Rename-Item $App $old -ErrorAction Stop
+    } catch {
+      Write-Host "Couldn't update right now ($($_.Exception.Message)). Close any window showing C:\Sparks\app; it will update next time." -ForegroundColor DarkYellow
+      $old = $null
+    }
+    if ($old) {
+      # 2. Put the new version in place; if that fails, put the old one back.
+      try {
+        Move-Item $fresh $App -ErrorAction Stop
+      } catch {
+        Rename-Item $old $App
+        throw "The update couldn't be installed ($($_.Exception.Message)). Your current version is still there; try again."
+      }
+      # 3. Move your settings, photos and installed components across. The old folder is only
+      #    deleted once all of them made it.
+      $kept = $true
+      foreach ($keep in ".env", "storage", "node_modules") {
+        $from = Join-Path $old $keep
+        if (Test-Path $from) {
+          $to = Join-Path $App $keep
+          Remove-Item $to -Recurse -Force -ErrorAction SilentlyContinue
+          try { Move-Item $from $to -ErrorAction Stop } catch { $kept = $false; Write-Host "Couldn't move $keep ($($_.Exception.Message)). It's still in $old." -ForegroundColor DarkYellow }
+        }
+      }
+      if ($latest) { Set-Content $VersionFile $latest -NoNewline }
+      if ($kept) { Remove-Item $old -Recurse -Force -ErrorAction SilentlyContinue }
+    }
   }
-  Move-Item $fresh $App
-  if ($latest) { Set-Content $VersionFile $latest -NoNewline }
-  Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
+  Remove-Item $dl -Recurse -Force -ErrorAction SilentlyContinue
+  if (-not (Test-Path $VersionFile) -and $latest) { Set-Content $VersionFile $latest -NoNewline }
 
   # Keep the launcher itself current.
   Copy-Item (Join-Path $App "scripts\install-windows.ps1") $Launcher -Force
 }
 
-# Desktop icon → this launcher (update check, then start).
+# If an earlier update had to leave your settings or photos in an old folder (Windows wouldn't let
+# go of them), bring them back now.
+if (Test-Path $App) {
+  foreach ($keep in ".env", "storage") {
+    if (Test-Path (Join-Path $App $keep)) { continue }
+    $stranded = Get-ChildItem $Root -Directory -Filter "app-old-*" -ErrorAction SilentlyContinue |
+      Where-Object { Test-Path (Join-Path $_.FullName $keep) } | Sort-Object Name -Descending | Select-Object -First 1
+    if ($stranded) {
+      try { Move-Item (Join-Path $stranded.FullName $keep) (Join-Path $App $keep) -ErrorAction Stop; Write-Host "Recovered $keep from $($stranded.Name)." -ForegroundColor Green }
+      catch { Write-Host "Your $keep is safe in $($stranded.FullName) but couldn't be moved back ($($_.Exception.Message))." -ForegroundColor DarkYellow }
+    }
+  }
+}
+
+if ($env:SPARKS_TEST_NO_START) { return } # testing: stop before the shortcut and start-up
+
+# Desktop icon -> this launcher (update check, then start).
 if (-not (Test-Path $Launcher)) { Copy-Item (Join-Path $App "scripts\install-windows.ps1") $Launcher -Force }
 $shell = New-Object -ComObject WScript.Shell
 $link = $shell.CreateShortcut((Join-Path ([Environment]::GetFolderPath("Desktop")) "Sparks.lnk"))

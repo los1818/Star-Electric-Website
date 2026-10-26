@@ -127,7 +127,7 @@ Start-Job -ScriptBlock {
 } | Out-Null
 
 # The real network card is the one with a default gateway (not WSL/Hyper-V/Docker virtual adapters).
-$lan = (Get-NetIPConfiguration -ErrorAction SilentlyContinue | Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq "Up" } | Select-Object -First 1).IPv4Address.IPAddress
+$lan = (Get-NetIPConfiguration -ErrorAction SilentlyContinue | Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq "Up" } | Select-Object -First 1).IPv4Address.IPAddress | Select-Object -First 1
 Say "Sparks is starting at http://localhost:$Port  (leave this window open; press Ctrl+C to stop)"
 if ($lan) { Write-Host "    From a phone or another computer on the same network: http://${lan}:$Port" -ForegroundColor Yellow }
 # -p: a fixed port (fails rather than quietly moving to another one); -H: reachable on the local network.
