@@ -70,8 +70,10 @@ if (-not $ready) { Fail "The database didn't start. Check Docker Desktop for err
 
 Say "Updating the database"
 Run "npx" @("prisma", "migrate", "deploy")
+Run "npx" @("prisma", "generate")
 
 npx tsx scripts/needs-seed.ts
+if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 10) { Fail "Couldn't check the database (see the messages above)." }
 $empty = ($LASTEXITCODE -eq 0)
 if ($ResetDemo -or $empty) {
   Say "Loading demo data (fake customers, jobs and staff)"

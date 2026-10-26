@@ -42,8 +42,11 @@ docker compose exec -T db pg_isready -U sparks >/dev/null 2>&1 || fail "The data
 
 say "Updating the database"
 npx prisma migrate deploy
+npx prisma generate
 
-if [ "${1:-}" = "--reset-demo" ] || npx tsx scripts/needs-seed.ts; then
+status=0; npx tsx scripts/needs-seed.ts || status=$?
+[ "$status" = 0 ] || [ "$status" = 10 ] || fail "Couldn't check the database (see the messages above)."
+if [ "${1:-}" = "--reset-demo" ] || [ "$status" = 0 ]; then
   say "Loading demo data (fake customers, jobs and staff)"
   npx prisma db seed
 fi
