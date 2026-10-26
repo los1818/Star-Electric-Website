@@ -16,8 +16,9 @@ It downloads Sparks to `C:\Sparks\app`, puts a **Sparks** icon on your desktop a
 Node.js and opens Docker Desktop for you if needed. (If Docker Desktop isn't installed at all, it
 installs it and asks you to restart the PC once; after that, double-click the Sparks icon.)
 
-Run the same line again any time to update; your data, settings and photos are kept.
-After that, the **Sparks** desktop icon is all you need to start it.
+After that, just double-click the **Sparks** desktop icon. It checks for a newer version each time,
+installs it if there is one (your data, settings and photos are kept), then starts Sparks. No more
+pasting. If the internet is down, it starts the version you have.
 
 The rest of this page is the manual way.
 
@@ -82,13 +83,8 @@ Newer exports later? Drop them in the same folder and run it again: records are 
 
 ## Getting a newer version
 
-When there's an update, download the ZIP again and extract it to a new folder (for example
-`C:\Sparks-new`), then double-click `Start Sparks (Windows).cmd` in its `sparks` folder. Anything
-you entered is kept: demo data is only loaded into an empty database.
-
-**Photos and signatures** are files, kept in the `storage` folder inside `sparks`. Before starting
-the new version, copy that `storage` folder from the old `sparks` folder into the new one, or the
-photos you added will show as broken images.
+Nothing to do: the **Sparks** desktop icon updates itself each time you start it. Your data,
+settings and photos (the `storage` folder) are kept.
 
 ## Starting over with fresh demo data
 
