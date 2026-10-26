@@ -3,6 +3,24 @@
 This runs Sparks on one PC so you can try it while it's being built. It uses fake demo data.
 When the build is done, Sparks moves to proper hosting (Azure) and this local copy can be removed.
 
+## Quickest way: one paste
+
+1. Press the **Windows key**, type **PowerShell**, press Enter.
+2. Paste this line and press Enter:
+
+   ```
+   irm https://raw.githubusercontent.com/los1818/Star-Electric-Website/claude/cool-turing-1117wj/sparks/scripts/install-windows.ps1 | iex
+   ```
+
+It downloads Sparks to `C:\Sparks\app`, puts a **Sparks** icon on your desktop and starts it. It installs
+Node.js and opens Docker Desktop for you if needed. (If Docker Desktop isn't installed at all, it
+installs it and asks you to restart the PC once; after that, double-click the Sparks icon.)
+
+Run the same line again any time to update; your data, settings and photos are kept.
+After that, the **Sparks** desktop icon is all you need to start it.
+
+The rest of this page is the manual way.
+
 ## 1. Install two programs (one time, about 15 minutes)
 
 1. **Node.js**: go to https://nodejs.org, download the **LTS** version, and run the installer
@@ -77,7 +95,7 @@ This **wipes everything** and reloads the demo data.
 |---|---|
 | "Docker Desktop isn't running" | Open Docker Desktop, wait for **Engine running**, try again. |
 | "Node.js isn't installed" / "too old" | Install the **LTS** version from https://nodejs.org, then try again. |
-| "The database didn't start" | Restart Docker Desktop (whale icon by the clock → Restart) and try again. Another database program using port 5432 can also cause this. |
+| "The database didn't start" | Restart Docker Desktop (whale icon by the clock → Restart) and try again. Another program using port 55432 can also cause this. |
 | The browser says the site can't be reached | Wait a minute (the first start compiles pages), then refresh. Make sure the black window is still open. |
 | Pages are slow the first time you open them | Normal in this test mode: each page is prepared the first time it's opened. |
 

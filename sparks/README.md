@@ -20,7 +20,7 @@ You need Node.js 22+ and Docker Desktop.
 cd sparks
 cp .env.example .env          # then set AUTH_SECRET (run: npx auth secret)
 npm install
-docker compose up -d          # Postgres on localhost:5432
+docker compose up -d          # Postgres on localhost:55432
 npm run db:migrate            # create tables
 npm run db:seed               # lookup tables + fake demo data (wipes the database)
 npm run dev                   # http://localhost:3000

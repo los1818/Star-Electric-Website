@@ -17,12 +17,40 @@ function Run($exe, [string[]]$argList) {
   if ($LASTEXITCODE -ne 0) { Fail "'$exe $($argList -join ' ')' failed (see the messages above)." }
 }
 
+function Refresh-Path { $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User") }
+function Winget-Install($id, $label) {
+  if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { return $false }
+  Say "Installing $label (one time; Windows may ask for permission)"
+  winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements | Out-Host
+  Refresh-Path
+  return $true
+}
+
+# Node.js: install it if missing.
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Winget-Install "OpenJS.NodeJS.LTS" "Node.js" | Out-Null }
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Fail "Node.js isn't installed. Install the LTS version from https://nodejs.org and run this again." }
 $major = [int]((node -v).TrimStart("v").Split(".")[0])
 if ($major -lt 20) { Fail "Node.js $(node -v) is too old. Install the LTS version (22) from https://nodejs.org." }
-if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { Fail "Docker Desktop isn't installed. Install it from https://www.docker.com/products/docker-desktop/ and run this again." }
+
+# Docker Desktop: install it if missing (needs a restart afterwards), open it if it isn't running.
+$dockerExe = Join-Path $env:ProgramFiles "Docker\Docker\Docker Desktop.exe"
+if (-not (Get-Command docker -ErrorAction SilentlyContinue) -and -not (Test-Path $dockerExe)) {
+  if (Winget-Install "Docker.DockerDesktop" "Docker Desktop") {
+    Fail "Docker Desktop was just installed. Restart the PC, open Docker Desktop once (accept its terms), then double-click the Sparks icon on your desktop."
+  }
+  Fail "Docker Desktop isn't installed. Install it from https://www.docker.com/products/docker-desktop/ and run this again."
+}
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { $env:Path += ";" + (Join-Path $env:ProgramFiles "Docker\Docker\resources\bin") }
 docker info *> $null
-if ($LASTEXITCODE -ne 0) { Fail "Docker Desktop isn't running. Open Docker Desktop, wait until it says it's running, then run this again." }
+if ($LASTEXITCODE -ne 0) {
+  if (Test-Path $dockerExe) {
+    Say "Opening Docker Desktop and waiting for it (up to 3 minutes)"
+    Start-Process $dockerExe
+    for ($i = 0; $i -lt 90; $i++) { Start-Sleep -Seconds 2; docker info *> $null; if ($LASTEXITCODE -eq 0) { break } }
+  }
+  docker info *> $null
+  if ($LASTEXITCODE -ne 0) { Fail "Docker Desktop isn't running. Open Docker Desktop, wait until it says it's running, then run this again." }
+}
 
 if (-not (Test-Path ".env")) {
   Say "Creating settings file (.env)"
@@ -35,24 +63,35 @@ if (-not (Test-Path ".env")) {
 # Sign-in links follow whatever address you open Sparks at (so phones on the same Wi-Fi work);
 # an AUTH_URL pinned to localhost from an older version would send them back to localhost.
 $envText = Get-Content ".env" -Raw
-if ($envText -match '(?m)^AUTH_URL="?http://localhost') {
-  ($envText -replace '(?m)^AUTH_URL=.*\r?\n?', '') | Set-Content ".env" -NoNewline -Encoding utf8
-}
+$fixed = $envText -replace '(?m)^AUTH_URL="?http://localhost.*\r?\n?', ''
+# The database moved to its own port (55432) so it can't clash with another PostgreSQL.
+$fixed = $fixed -replace 'sparks:sparks@localhost:5432/', 'sparks:sparks@localhost:55432/'
+if ($fixed -ne $envText) { $fixed | Set-Content ".env" -NoNewline -Encoding utf8 }
 
 $busy = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($busy) {
-  # Already running (e.g. started earlier)? Then just open it.
+  # Already running and working (e.g. started earlier)? Then just open it.
   try {
-    $page = Invoke-WebRequest "http://localhost:$Port/login" -UseBasicParsing -TimeoutSec 10
-    if ($page.Content -match "Sparks") {
+    $page = Invoke-WebRequest "http://localhost:$Port/login" -UseBasicParsing -TimeoutSec 15
+    if ($page.Content -match "Sparks" -and $page.Content -notmatch "Runtime Error|did not initialize") {
       Say "Sparks is already running. Opening http://localhost:$Port"
       Start-Process "http://localhost:$Port"
       Read-Host "Press Enter to close this window (Sparks keeps running in its own window)"
       exit 0
     }
   } catch { }
-  $who = (Get-Process -Id $busy.OwningProcess -ErrorAction SilentlyContinue).ProcessName
-  Fail "Another program ($who) is using port $Port, so Sparks can't start. Close it (Task Manager -> End task on '$who'), or restart the PC, then run this again."
+  # A broken or leftover copy of Sparks (any folder) holding the port: stop it.
+  $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $($busy.OwningProcess)" -ErrorAction SilentlyContinue
+  if ($proc -and $proc.CommandLine -match "next" -and $proc.CommandLine -match "$Port") {
+    Say "Stopping an older copy of Sparks that was still running"
+    Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "next" -and $_.CommandLine -match "-p $Port" } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    Stop-Process -Id $busy.OwningProcess -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+  }
+  if (Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue) {
+    $who = (Get-Process -Id $busy.OwningProcess -ErrorAction SilentlyContinue).ProcessName
+    Fail "Another program ($who) is using port $Port, so Sparks can't start. Close it, or restart the PC, then run this again."
+  }
 }
 
 Say "Installing app components (first time takes a few minutes)"
