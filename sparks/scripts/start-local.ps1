@@ -39,8 +39,20 @@ if ($envText -match '(?m)^AUTH_URL="?http://localhost') {
   ($envText -replace '(?m)^AUTH_URL=.*\r?\n?', '') | Set-Content ".env" -NoNewline -Encoding utf8
 }
 
-if (Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue) {
-  Fail "Something is already using port $Port. If Sparks is already running in another window, use that one (http://localhost:$Port). Otherwise close the other program and run this again."
+$busy = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($busy) {
+  # Already running (e.g. started earlier)? Then just open it.
+  try {
+    $page = Invoke-WebRequest "http://localhost:$Port/login" -UseBasicParsing -TimeoutSec 10
+    if ($page.Content -match "Sparks") {
+      Say "Sparks is already running. Opening http://localhost:$Port"
+      Start-Process "http://localhost:$Port"
+      Read-Host "Press Enter to close this window (Sparks keeps running in its own window)"
+      exit 0
+    }
+  } catch { }
+  $who = (Get-Process -Id $busy.OwningProcess -ErrorAction SilentlyContinue).ProcessName
+  Fail "Another program ($who) is using port $Port, so Sparks can't start. Close it (Task Manager -> End task on '$who'), or restart the PC, then run this again."
 }
 
 Say "Installing app components (first time takes a few minutes)"
