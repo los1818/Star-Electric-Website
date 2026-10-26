@@ -25,7 +25,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
   const contains = { contains: q, mode: "insensitive" as const };
   const where: Prisma.ProjectWhereInput = {
     ...(status === "all" ? {} : status ? { statusId: status } : { status: { isClosed: false } }),
-    ...(q ? { OR: [{ number: contains }, { name: contains }, { contractNumber: contains }, { customerPoNumber: contains }, { customer: { name: contains } }] } : {}),
+    ...(q ? { OR: [{ number: contains }, { jobNumber: contains }, { name: contains }, { contractNumber: contains }, { customerPoNumber: contains }, { customer: { name: contains } }] } : {}),
   };
   const [rows, total, statuses] = await Promise.all([
     db.project.findMany({
@@ -48,7 +48,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
       <ListToolbar
         basePath="/projects"
         q={q}
-        placeholder="Search number, name, contract, PO or customer…"
+        placeholder="Search job #, number, name, contract, PO or customer…"
         filters={[{ name: "status", label: "Status", value: status, options: [{ value: "", label: "Open" }, { value: "all", label: "All statuses" }, ...statuses] }]}
       />
       <DataTable
@@ -56,6 +56,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
         href={(p) => `/projects/${p.id}`}
         empty={q || status ? "No projects match those filters." : "No open projects."}
         columns={[
+          { header: "Job #", cell: (p) => <span className="whitespace-nowrap font-mono text-xs font-semibold">{p.jobNumber ?? "—"}</span> },
           { header: "Number", cell: (p) => <span className="font-mono text-xs">{p.number}</span> },
           { header: "Project", cell: (p) => <><div className="font-semibold">{p.name}</div><Link href={`/customers/${p.customer.id}`} className="text-xs text-muted hover:underline">{p.customer.name}</Link></> },
           { header: "Status", cell: (p) => <Badge color={p.status.color}>{p.status.label}</Badge> },

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { checkbox, money, optionalDateOnly, optionalId, optionalText, percent, requiredId, requiredText, wholeNumber } from "@/lib/validation";
 import { audit, changedFields } from "@/server/audit";
-import { nextNumber } from "@/server/numbering";
+import { nextJobNumber, nextNumber } from "@/server/numbering";
 import { ActionError, ValidationError, authorizedFormAction } from "./authorized-action";
 
 const projectFields = {
@@ -35,7 +35,7 @@ async function checkProject(input: ProjectInput) {
 export const createProject = authorizedFormAction("projects:write", z.object(projectFields), async (input, user) => {
   await checkProject(input);
   const project = await db.$transaction(async (tx) => {
-    const created = await tx.project.create({ data: { ...input, number: await nextNumber(tx, "PROJECT") } });
+    const created = await tx.project.create({ data: { ...input, number: await nextNumber(tx, "PROJECT"), jobNumber: await nextJobNumber(tx) } });
     await audit(tx, user.id, "create", "Project", created.id, input);
     return created;
   });

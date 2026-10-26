@@ -55,6 +55,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         title={`${p.number}: ${p.name}`}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
+            {p.jobNumber && <span className="font-mono text-sm font-bold text-ink">Job {p.jobNumber}</span>}
             <Badge color={p.status.color}>{p.status.label}</Badge>
             <Link href={`/customers/${p.customer.id}`} className="font-semibold text-ink hover:underline">{p.customer.name}</Link>
           </span>

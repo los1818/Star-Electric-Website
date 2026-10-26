@@ -20,6 +20,7 @@ test("office creates a project, builds its schedule of values and approves a cha
   await page.getByLabel("Holdback (%)").fill("10");
   await page.getByRole("button", { name: "Create project" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText(name);
+  await expect(page.getByText(/^Job \d{7}$/)).toBeVisible();
   await expect(page.getByText(/^P-\d{4}/).first()).toBeVisible();
   await expect(page.getByText("No schedule of values yet.")).toBeVisible();
 

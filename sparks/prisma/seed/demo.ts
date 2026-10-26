@@ -1,5 +1,6 @@
 import { Prisma, type InventoryItem, type PrismaClient, type Role } from "@prisma/client";
 import { computeTotals, lineAmountCents, markupPriceCents, type TaxComponentRate } from "../../src/lib/money";
+import { BACKFILL_JOB_NUMBERS_SQL } from "../../src/lib/job-numbers";
 import { suggestMarkupBp } from "../../src/lib/markup";
 import { progressInvoiceTotals, progressLine } from "../../src/lib/progress-billing";
 import { reginaDate, reginaTime } from "../../src/lib/time";
@@ -674,6 +675,9 @@ export async function seedDemo(db: PrismaClient): Promise<void> {
       });
     }
   }
+
+  // Job numbers (2026001, ...) for projects and stand-alone work orders, in creation order.
+  await db.$transaction(BACKFILL_JOB_NUMBERS_SQL.map((sql) => db.$executeRawUnsafe(sql)));
 }
 
 export const DEMO_COUNTS = {

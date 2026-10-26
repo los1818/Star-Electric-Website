@@ -11,6 +11,9 @@ scripts/migrate-trimble/reports/
 
 # Business data: never commit real inventory/price files or import reports
 *.xlsx
+*.adb
+*.mdb
+*.accdb
 *.xls
 *.csv
 scripts/*/reports/

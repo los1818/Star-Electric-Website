@@ -37,6 +37,7 @@ test("office creates and edits a work order; the assigned tech moves it along an
   await page.getByLabel("Lead").selectOption({ label: "Marcus Lindqvist" });
   await page.getByRole("button", { name: "Create work order" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText(summary);
+  await expect(page.getByText(/^Job \d{7}$/)).toBeVisible(); // stand-alone work gets a job number (2026014)
   await expect(page.getByText("Scheduled", { exact: true })).toBeVisible(); // crew + time → Scheduled
   await expect(page.getByText("Tue, Nov 3, 8:00 a.m. – 12:00 p.m.")).toBeVisible();
   const woUrl = page.url();

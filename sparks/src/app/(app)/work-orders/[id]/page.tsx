@@ -8,6 +8,7 @@ import { RefreshRecentItems } from "@/components/refresh-recent-items";
 import { can } from "@/lib/auth/permissions";
 import { requirePageAccess } from "@/lib/auth/server";
 import { db } from "@/lib/db";
+import { jobNumberOf } from "@/lib/job-numbers";
 import { formatCents, formatHours, lineAmountCents } from "@/lib/money";
 import { formatDateTime, formatTime } from "@/lib/time";
 import { InlineAction } from "@/components/ui/inline-action";
@@ -27,7 +28,7 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
     customer: { select: { id: true, name: true, phone: true, creditHold: true } },
     jobSite: true,
     contact: true,
-    project: { select: { id: true, number: true, name: true } },
+    project: { select: { id: true, number: true, name: true, jobNumber: true } },
     type: true,
     status: true,
     priority: true,
@@ -62,6 +63,7 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
         title={`${w.number}: ${w.summary}`}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
+            {jobNumberOf(w) && <span className="font-mono text-sm font-bold text-ink">Job {jobNumberOf(w)}</span>}
             <Badge color={w.status.color}>{w.status.label}</Badge>
             <Badge color={w.type.color}>{w.type.label}</Badge>
             <Badge color={w.priority.color}>{w.priority.label} priority</Badge>

@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { jobNumberOf } from "@/lib/job-numbers";
 import { can } from "@/lib/auth/permissions";
 import type { CurrentUser } from "@/lib/auth/server";
 
@@ -64,22 +65,22 @@ export async function globalSearch(user: CurrentUser, rawQuery: string): Promise
   if (canAllWo || can(user.role, "workorders:read_assigned")) {
     const scope = canAllWo ? {} : { assignments: { some: { employeeId: user.employeeId ?? "__none__" } } };
     const workOrders = await db.workOrder.findMany({
-      where: { AND: [scope, { OR: [{ number: contains }, { summary: contains }, { customerPoNumber: contains }, { jobSite: { street: contains } }] }] },
-      include: { customer: { select: { name: true } }, status: { select: { label: true } } },
+      where: { AND: [scope, { OR: [{ number: contains }, { jobNumber: contains }, { project: { jobNumber: contains } }, { summary: contains }, { customerPoNumber: contains }, { jobSite: { street: contains } }] }] },
+      include: { customer: { select: { name: true } }, status: { select: { label: true } }, project: { select: { jobNumber: true } } },
       take: PER_TYPE,
       orderBy: { number: "desc" },
     });
-    hits.push(...workOrders.map((w) => ({ type: "Work order", id: w.id, title: `${w.number}: ${w.summary}`, subtitle: `${w.customer.name} · ${w.status.label}`, href: `/work-orders/${w.id}` })));
+    hits.push(...workOrders.map((w) => ({ type: "Work order", id: w.id, title: `${w.number}: ${w.summary}`, subtitle: [jobNumberOf(w) && `Job ${jobNumberOf(w)}`, w.customer.name, w.status.label].filter(Boolean).join(" · "), href: `/work-orders/${w.id}` })));
   }
 
   if (can(user.role, "projects:read")) {
     const projects = await db.project.findMany({
-      where: { OR: [{ number: contains }, { name: contains }, { contractNumber: contains }, { customer: { name: contains } }] },
+      where: { OR: [{ number: contains }, { jobNumber: contains }, { name: contains }, { contractNumber: contains }, { customer: { name: contains } }] },
       include: { customer: { select: { name: true } }, status: { select: { label: true } } },
       take: PER_TYPE,
       orderBy: { number: "desc" },
     });
-    hits.push(...projects.map((p) => ({ type: "Project", id: p.id, title: `${p.number}: ${p.name}`, subtitle: `${p.customer.name} · ${p.status.label}`, href: `/projects/${p.id}` })));
+    hits.push(...projects.map((p) => ({ type: "Project", id: p.id, title: `${p.number}: ${p.name}`, subtitle: [p.jobNumber && `Job ${p.jobNumber}`, p.customer.name, p.status.label].filter(Boolean).join(" · "), href: `/projects/${p.id}` })));
   }
 
   if (can(user.role, "quotes:read")) {

@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { can } from "@/lib/auth/permissions";
 import { checkbox, idList, optionalId, optionalMoney, optionalReginaDateTime, optionalText, requiredId, requiredText } from "@/lib/validation";
 import { audit, changedFields } from "@/server/audit";
-import { nextNumber } from "@/server/numbering";
+import { nextJobNumber, nextNumber } from "@/server/numbering";
 import { allowedNextStatuses, workOrderScope } from "@/server/work-orders";
 import { ActionError, ValidationError, authorizedFormAction } from "./authorized-action";
 
@@ -66,7 +66,14 @@ export const createWorkOrder = authorizedFormAction("workorders:write", z.object
   if (!status) throw new ActionError(`The “${statusCode}” work order status is missing. Check Settings → Work order statuses.`);
   const wo = await db.$transaction(async (tx) => {
     const created = await tx.workOrder.create({
-      data: { ...workOrderData(input), number: await nextNumber(tx, "WORK_ORDER"), statusId: status.id, assignments: { create: assignmentRows(input) } },
+      data: {
+        ...workOrderData(input),
+        number: await nextNumber(tx, "WORK_ORDER"),
+        // Stand-alone work gets its own job number; work under a project uses the project's.
+        jobNumber: input.projectId ? null : await nextJobNumber(tx),
+        statusId: status.id,
+        assignments: { create: assignmentRows(input) },
+      },
     });
     await audit(tx, user.id, "create", "WorkOrder", created.id, input);
     return created;
@@ -82,7 +89,10 @@ export const updateWorkOrder = authorizedFormAction("workorders:write", z.object
   if (before.invoices.length && before.customerId !== input.customerId) throw new ActionError("This work order has been invoiced, so its customer can't change.");
   const data = workOrderData(input);
   await db.$transaction(async (tx) => {
-    await tx.workOrder.update({ where: { id }, data });
+    // Taken off a project and never had its own job number: give it one. (A work order moved onto a
+    // project keeps any number it had, so paperwork already issued still matches.)
+    const jobNumber = !input.projectId && !before.jobNumber ? await nextJobNumber(tx) : undefined;
+    await tx.workOrder.update({ where: { id }, data: { ...data, ...(jobNumber ? { jobNumber } : {}) } });
     await tx.workOrderAssignment.deleteMany({ where: { workOrderId: id, employeeId: { notIn: input.assigneeIds } } });
     for (const a of assignmentRows(input)) {
       await tx.workOrderAssignment.upsert({

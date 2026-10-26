@@ -258,3 +258,4 @@ No cut-off date.
 | 2026-10-23 | All times are Regina time (UTC−6 year-round, no DST). |
 | 2026-10-22 | App renamed from "Star FieldOps" to **Sparks**; folder `fieldops/` → `sparks/`. |
 | 2026-10-24 | Work order photos and customer signatures: techs add them to assigned, open WOs and may remove only their own photos; only the office removes signatures. |
+| 2026-10-26 | **Job numbers** continue Trimble's File # format (year + 3-digit count: 2026211, restarting each January) and are shared by projects and stand-alone work orders; work orders under a project show the project's job number. WO-/P- numbers stay as internal record numbers. The Trimble import moves the year's count past the highest imported job. |

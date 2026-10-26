@@ -586,6 +586,8 @@ model WorkOrder {
   /// Where a migrated record came from, e.g. "trimble:dbo.Customer:1042". Null for records made in Sparks.
   legacyRef          String?           @unique
   number             String            @unique
+  /// Job number (2026014) for stand-alone work; work orders under a project use the project's.
+  jobNumber          String?           @unique
   customerId         String
   customer           Customer          @relation(fields: [customerId], references: [id])
   jobSiteId          String
@@ -673,6 +675,8 @@ model Project {
   id                    String        @id @default(cuid())
   legacyRef             String?       @unique
   number                String        @unique
+  /// Job number (2026014), shared list with stand-alone work orders. See src/lib/job-numbers.ts.
+  jobNumber             String?       @unique
   name                  String
   customerId            String
   customer              Customer      @relation(fields: [customerId], references: [id])

@@ -22,7 +22,7 @@ const TRANSITIONS: Record<string, string[]> = { "s-disp": ["s-prog", "s-sched", 
 const tx = {
   workOrder: { create: vi.fn(), update: vi.fn() },
   workOrderNote: { create: vi.fn() },
-  sequence: { update: vi.fn() },
+  sequence: { update: vi.fn(), createMany: vi.fn() },
   auditLog: { create: vi.fn() },
 };
 vi.mock("@/lib/db", () => ({
@@ -108,12 +108,22 @@ describe("createWorkOrder", () => {
     signInAs("OFFICE");
     await expect(createWorkOrder({}, form(base))).rejects.toMatchObject({ to: "/work-orders/wo-new" });
     expect(m(tx.workOrder.create).mock.calls[0][0].data).toMatchObject({ number: "WO-000016", statusId: "s-new", summary: "Replace ballast" });
+    expect(m(tx.workOrder.create).mock.calls[0][0].data.jobNumber).toMatch(/^20\d{2}016$/); // stand-alone: its own job number
 
     await expect(createWorkOrder({}, form({ ...base, scheduledStart: "2026-11-03T08:00", assigneeIds: ["e1", "e2"], leadEmployeeId: "e2" }))).rejects.toMatchObject({ to: "/work-orders/wo-new" });
     const data = m(tx.workOrder.create).mock.calls[1][0].data;
     expect(data.statusId).toBe("s-sched");
     expect(data.scheduledStart.toISOString()).toBe("2026-11-03T14:00:00.000Z"); // 8:00 Regina
     expect(data.assignments.create).toEqual([{ employeeId: "e1", isLead: false }, { employeeId: "e2", isLead: true }]);
+  });
+
+  it("work under a project uses the project's job number instead of getting one", async () => {
+    signInAs("OFFICE");
+    m(db.project.findUnique).mockResolvedValue({ id: "proj1", customerId: "cust1" } as never);
+    await createWorkOrder({}, form({ ...base, projectId: "proj1" })).catch(() => {});
+    const data = m(tx.workOrder.create).mock.calls[0]?.[0].data;
+    expect(data?.projectId).toBe("proj1");
+    expect(data?.jobNumber).toBeNull();
   });
 
   it("rejects a job site that belongs to another customer", async () => {

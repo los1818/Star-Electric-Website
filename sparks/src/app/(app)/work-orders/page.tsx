@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { can } from "@/lib/auth/permissions";
 import { requirePageAccess } from "@/lib/auth/server";
 import { pageParams, param, type SearchParams } from "@/lib/list-params";
+import { jobNumberOf } from "@/lib/job-numbers";
 import { formatDateTime } from "@/lib/time";
 import { lookupOptions } from "@/server/options";
 import { workOrderScope } from "@/server/work-orders";
@@ -37,6 +38,8 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
         ? {
             OR: [
               { number: contains },
+              { jobNumber: contains },
+              { project: { jobNumber: contains } },
               { summary: contains },
               { customerPoNumber: contains },
               { customer: { name: contains } },
@@ -56,6 +59,7 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
       include: {
         customer: { select: { id: true, name: true } },
         jobSite: { select: { name: true, street: true } },
+        project: { select: { jobNumber: true } },
         status: true,
         type: true,
         priority: true,
@@ -78,7 +82,7 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
       <ListToolbar
         basePath="/work-orders"
         q={q}
-        placeholder="Search number, summary, customer, site, address or PO…"
+        placeholder="Search job #, number, summary, customer, site, address or PO…"
         filters={[
           { name: "status", label: "Status", value: status, options: [{ value: "", label: "Open" }, { value: "all", label: "All statuses" }, ...statuses] },
           { name: "type", label: "Type", value: type, options: [{ value: "", label: "All types" }, ...types] },
@@ -92,6 +96,7 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
         href={(w) => `/work-orders/${w.id}`}
         empty={q || status || type || assignee ? "No work orders match those filters." : "No open work orders."}
         columns={[
+          { header: "Job #", cell: (w) => <span className="whitespace-nowrap font-mono text-xs font-semibold">{jobNumberOf(w) ?? "—"}</span> },
           { header: "Number", cell: (w) => <span className="whitespace-nowrap font-mono text-xs">{w.number}</span> },
           {
             header: "Summary",
