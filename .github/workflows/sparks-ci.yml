@@ -1,0 +1,64 @@
+# Sparks (the sparks/ folder): typecheck, lint, unit tests, build and browser tests on every push.
+# The Sparks desktop updater on the office PC only installs commits where this check passed.
+name: Sparks CI
+
+on:
+  push:
+    branches: [claude/cool-turing-1117wj]
+  pull_request:
+    paths: ["sparks/**", ".github/workflows/sparks-ci.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: sparks-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sparks:
+    # The updater looks for this exact name (scripts/install-windows.ps1).
+    name: sparks-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: sparks
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sparks
+          POSTGRES_PASSWORD: sparks
+          POSTGRES_DB: sparks
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sparks" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://sparks:sparks@localhost:5432/sparks?schema=public
+      AUTH_SECRET: ci-only-not-a-real-secret
+      AUTH_TRUST_HOST: "true"
+      AUTH_DEV_LOGIN: "true"
+      STORAGE_DIR: /tmp/sparks-storage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sparks/package-lock.json
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Browser tests
+        run: |
+          npm run db:seed
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: sparks/test-results
+          retention-days: 7

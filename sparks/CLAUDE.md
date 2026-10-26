@@ -7,7 +7,7 @@ changing anything.
 
 > This app lives in the `sparks/` folder of the `star-electric-website` repo. The repo root
 > is the public marketing site (static HTML). Never touch files outside `sparks/` from
-> Sparks work, and never mix the two.
+> Sparks work (except `.github/workflows/sparks-ci.yml`), and never mix the two.
 
 ## Stack
 - Next.js (App Router) + TypeScript (strict)
@@ -35,6 +35,9 @@ changing anything.
 - **Before every push**, have the `senior-engineer` agent (`.claude/agents/senior-engineer.md`) review
   the change and fix its blockers. The owner's PC installs each push automatically on the next start,
   so a broken push breaks their app. Never commit real data (exports, user lists, reports).
+- GitHub Actions (`.github/workflows/sparks-ci.yml`, job `sparks-checks`) runs typecheck, lint, unit
+  tests, build and e2e on every push; the PC's updater only installs commits where it passed. Keep it
+  green. This workflow file is the one approved exception to "only touch `sparks/`".
 
 ## Brand
 - Match starelectric.ca (repo root `style.css`): yellow `#F5C118` (hover `#D4A812`), black `#111111`,

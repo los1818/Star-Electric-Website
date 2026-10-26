@@ -4,8 +4,9 @@
 #   irm https://raw.githubusercontent.com/los1818/Star-Electric-Website/claude/cool-turing-1117wj/sparks/scripts/install-windows.ps1 | iex
 #
 # That puts Sparks in C:\Sparks\app and a "Sparks" icon on the desktop. The icon runs a copy of this
-# script (C:\Sparks\sparks.ps1), which checks GitHub for a newer version each time, installs it if
-# there is one (keeping your settings, photos and database), then starts Sparks. No more pasting.
+# script (C:\Sparks\sparks.ps1), which checks GitHub for the newest version that passed its tests
+# (.github/workflows/sparks-ci.yml), installs it if it's newer (keeping your settings, photos and
+# database), then starts Sparks. No more pasting.
 $ErrorActionPreference = "Stop"
 $Repo = "los1818/Star-Electric-Website"
 $Branch = "claude/cool-turing-1117wj"
@@ -21,16 +22,34 @@ New-Item -ItemType Directory -Force $Root | Out-Null
 Set-Location $Root
 $ProgressPreference = "SilentlyContinue" # makes downloads much faster
 
-# What's the newest version on GitHub? (If we can't tell, e.g. offline, just start what's here.)
+# Which version to run: the newest one whose tests passed on GitHub ("sparks-checks"), so a broken
+# change never reaches this PC. (If GitHub can't be reached, e.g. offline, start what's here.)
 $latest = $null
+$installed = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw).Trim() } else { "" }
 try {
-  $latest = (Invoke-RestMethod "https://api.github.com/repos/$Repo/commits/$([uri]::EscapeDataString($Branch))" -Headers @{ "User-Agent" = "sparks-updater" } -TimeoutSec 15).sha
+  $headers = @{ "User-Agent" = "sparks-updater"; "Accept" = "application/vnd.github+json" }
+  $recent = Invoke-RestMethod "https://api.github.com/repos/$Repo/commits?sha=$([uri]::EscapeDataString($Branch))&per_page=10" -Headers $headers -TimeoutSec 15
+  foreach ($commit in $recent) {
+    # Reached the installed version before finding a newer tested one: stay put (never go backwards).
+    if ($commit.sha -eq $installed) { $latest = $installed; break }
+    $runs = (Invoke-RestMethod "https://api.github.com/repos/$Repo/commits/$($commit.sha)/check-runs?check_name=sparks-checks" -Headers $headers -TimeoutSec 15).check_runs
+    if ($runs | Where-Object { $_.conclusion -eq "success" }) { $latest = $commit.sha; break }
+  }
+  if ($latest -and $latest -ne $recent[0].sha) {
+    Write-Host "The newest change is still being tested (or failed its tests), so it isn't installed yet." -ForegroundColor DarkYellow
+  }
+  if (-not $latest) { Write-Host "No tested version found on GitHub yet. Starting the version on this PC." -ForegroundColor DarkYellow }
 } catch {
-  Write-Host "Couldn't check for updates ($($_.Exception.Message)). Starting the version on this PC." -ForegroundColor DarkYellow
+  Write-Host "Couldn't check for updates right now ($($_.Exception.Message)). Starting the version on this PC." -ForegroundColor DarkYellow
 }
 $current = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw).Trim() } else { "" }
 $needsUpdate = -not (Test-Path $App) -or ($latest -and $latest -ne $current)
-if (-not (Test-Path $App) -and -not $latest) { throw "Sparks isn't installed yet and GitHub can't be reached. Check the internet connection and try again." }
+if (-not (Test-Path $App) -and -not $latest) {
+  # First install with no tested version available: take the newest one.
+  Write-Host "No tested version yet; installing the newest one." -ForegroundColor DarkYellow
+  try { $latest = (Invoke-RestMethod "https://api.github.com/repos/$Repo/commits/$([uri]::EscapeDataString($Branch))" -Headers @{ "User-Agent" = "sparks-updater" } -TimeoutSec 15).sha }
+  catch { throw "Sparks isn't installed yet and GitHub can't be reached. Check the internet connection and try again." }
+}
 
 # Tidy up old versions left by earlier updates, but never one still holding settings or photos.
 Get-ChildItem $Root -Directory -Filter "app-old-*" -ErrorAction SilentlyContinue |

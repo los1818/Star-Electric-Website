@@ -83,7 +83,8 @@ Newer exports later? Drop them in the same folder and run it again: records are 
 
 ## Getting a newer version
 
-Nothing to do: the **Sparks** desktop icon updates itself each time you start it. Your data,
+Nothing to do: the **Sparks** desktop icon updates itself each time you start it, but only to
+versions that passed all their automatic tests on GitHub. Your data,
 settings and photos (the `storage` folder) are kept.
 
 ## Starting over with fresh demo data
