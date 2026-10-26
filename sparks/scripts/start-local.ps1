@@ -126,8 +126,12 @@ Start-Job -ScriptBlock {
   }
 } | Out-Null
 
-$lan = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.PrefixOrigin -in "Dhcp", "Manual" -and $_.IPAddress -notlike "169.254.*" } | Select-Object -First 1).IPAddress
+# The real network card is the one with a default gateway (not WSL/Hyper-V/Docker virtual adapters).
+$lan = (Get-NetIPConfiguration -ErrorAction SilentlyContinue | Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq "Up" } | Select-Object -First 1).IPv4Address.IPAddress
 Say "Sparks is starting at http://localhost:$Port  (leave this window open; press Ctrl+C to stop)"
 if ($lan) { Write-Host "    From a phone or another computer on the same network: http://${lan}:$Port" -ForegroundColor Yellow }
 # -p: a fixed port (fails rather than quietly moving to another one); -H: reachable on the local network.
-Run "npx" @("next", "dev", "-p", "$Port", "-H", "0.0.0.0")
+# Not Run(): stopping Sparks (Ctrl+C or closing the window) ends next with a non-zero code, which
+# isn't a problem.
+npx next dev -p "$Port" -H 0.0.0.0
+Write-Host "`nSparks has stopped. Double-click the Sparks icon to start it again." -ForegroundColor Yellow
