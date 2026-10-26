@@ -119,6 +119,20 @@ if ($ResetDemo -or $empty) {
   Run "npx" @("prisma", "db", "seed")
 }
 
+# Your people: if a users list is on this PC (sparks-users*.csv in C:\Sparks\import, Downloads, Desktop
+# or Documents, or any *user*.csv in C:\Sparks\import), add anyone in it who isn't in Sparks yet.
+# Safe every start: people already in keep their role, and switched-off people stay off.
+$userFolders = @((Join-Path (Split-Path (Get-Location)) "import"), "$env:USERPROFILE\Downloads", "$env:USERPROFILE\Desktop", "$env:USERPROFILE\Documents", "$env:OneDrive\Desktop", "$env:OneDrive\Documents")
+$usersFile = $userFolders | Where-Object { $_ -and (Test-Path $_) } | ForEach-Object {
+  Get-ChildItem $_ -File -Filter "sparks-users*.csv" -ErrorAction SilentlyContinue
+  if ($_ -like "*\import") { Get-ChildItem $_ -File -Filter "*user*.csv" -ErrorAction SilentlyContinue }
+} | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if ($usersFile) {
+  Say "Adding people from $($usersFile.FullName)"
+  npx tsx scripts/import-people/index.ts --file $usersFile.FullName --apply
+  if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't read that users file (see above). Sparks will start anyway." -ForegroundColor DarkYellow }
+}
+
 # Open the browser once the app answers.
 Start-Job -ScriptBlock {
   for ($i = 0; $i -lt 120; $i++) {
