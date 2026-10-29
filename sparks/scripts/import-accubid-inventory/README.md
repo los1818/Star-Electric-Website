@@ -1,5 +1,8 @@
 # Accubid inventory import
 
+> **Easier:** in Sparks, **Inventory → Import from Accubid** does the same thing with a preview of new items
+> and price changes. This script is the command-line version (`--prices-only` leaves stock alone).
+
 Loads a **Trimble Accubid** inventory export (the `.xlsx` with an `Ext` "Extension" sheet) into
 Sparks: one inventory item per line, with Trimble's pricing kept as-is, plus warehouse stock.
 

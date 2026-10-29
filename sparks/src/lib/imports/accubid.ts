@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { PRICE_UNIT_QUANTITY, lineAmountCents, netCostCents, parseCents, type PriceUnit } from "../../src/lib/money";
+import { PRICE_UNIT_QUANTITY, lineAmountCents, netCostCents, parseCents, type PriceUnit } from "../money";
 
 // Turns rows from a Trimble Accubid "Extension" (Ext) sheet into inventory items, and lists
 // anything that looks wrong. Pure: no file or database access, so it can be unit-tested.

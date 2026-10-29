@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guessCategory, guessUnit, normalizeDescription, parseAccubidRows, skuFor } from "../../scripts/import-accubid-inventory/parse";
+import { guessCategory, guessUnit, normalizeDescription, parseAccubidRows, skuFor } from "@/lib/imports/accubid";
 
 // Synthetic rows in the Trimble Accubid "Ext" layout. Prices are invented.
 function row(description: string, quantity: number | null, tradePrice: number, unit: "E" | "C" | "M", total: number, extra: Record<string, unknown> = {}) {

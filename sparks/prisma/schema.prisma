@@ -93,8 +93,9 @@ model User {
   auditLogs       AuditLog[]
   notes           WorkOrderNote[]
   attachments     Attachment[]
-  approvedTime    TimeEntry[]     @relation("TimeEntryApprovedBy")
-  managedProjects Project[]       @relation("ProjectManager")
+  approvedTime    TimeEntry[]            @relation("TimeEntryApprovedBy")
+  managedProjects Project[]              @relation("ProjectManager")
+  priceChanges    InventoryPriceChange[]
 }
 
 model Account {
@@ -1071,8 +1072,30 @@ model InventoryItem {
   quoteLines   QuoteLine[]
   invoiceLines InvoiceLine[]
   poLines      PurchaseOrderLine[]
+  priceChanges InventoryPriceChange[]
 
   @@index([description])
+}
+
+/// Every change to an item's trade price, discount or cost, and where it came from.
+model InventoryPriceChange {
+  id                 String        @id @default(cuid())
+  itemId             String
+  item               InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  /// MANUAL (edited in Sparks), PERCENT (bulk % adjustment), IMPORT (Accubid file)
+  source             String
+  note               String?
+  oldTradePriceCents Int
+  newTradePriceCents Int
+  oldDiscountBp      Int
+  newDiscountBp      Int
+  oldCostCents       Int
+  newCostCents       Int
+  changedById        String?
+  changedBy          User?         @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  createdAt          DateTime      @default(now())
+
+  @@index([itemId, createdAt])
 }
 
 model InventoryLocation {
