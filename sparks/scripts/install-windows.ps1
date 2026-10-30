@@ -1,19 +1,20 @@
 # Installs, updates and starts Sparks on Windows.
 #
-# First time, paste in Windows PowerShell:
-#   irm https://raw.githubusercontent.com/los1818/Star-Electric-Website/claude/cool-turing-1117wj/sparks/scripts/install-windows.ps1 | iex
+# Sparks lives in the private GitHub repo los1818/Sparks. This PC reads it with a read-only access
+# token, asked for once and kept encrypted for this Windows user in C:\Sparks\github-token.txt
+# (Windows DPAPI: other accounts on the PC can't read it). See RUN-ON-WINDOWS.md.
 #
-# That puts Sparks in C:\Sparks\app and a "Sparks" icon on the desktop. The icon runs a copy of this
-# script (C:\Sparks\sparks.ps1), which checks GitHub for the newest version that passed its tests
-# (.github/workflows/sparks-ci.yml), installs it if it's newer (keeping your settings, photos and
-# database), then starts Sparks. No more pasting.
+# The "Sparks" desktop icon runs a copy of this script (C:\Sparks\sparks.ps1). Each start it finds
+# the newest version on main that passed its tests (.github/workflows/ci.yml), installs it if it's
+# newer (keeping your settings, photos and database), then starts Sparks.
 $ErrorActionPreference = "Stop"
-$Repo = "los1818/Star-Electric-Website"
-$Branch = "claude/cool-turing-1117wj"
+$Repo = "los1818/Sparks"
+$Branch = "main"
 $Root = if ($env:SPARKS_ROOT) { $env:SPARKS_ROOT } else { "C:\Sparks" } # SPARKS_ROOT: for testing
 $App = Join-Path $Root "app"
 $VersionFile = Join-Path $App ".sparks-version"
 $Launcher = Join-Path $Root "sparks.ps1"
+$TokenFile = Join-Path $Root "github-token.txt"
 
 function Say($msg) { Write-Host "`n==> $msg" -ForegroundColor Yellow }
 # Show what went wrong instead of the window vanishing.
@@ -22,34 +23,61 @@ New-Item -ItemType Directory -Force $Root | Out-Null
 Set-Location $Root
 $ProgressPreference = "SilentlyContinue" # makes downloads much faster
 
-# Which version to run: the newest one whose tests passed on GitHub ("sparks-checks"), so a broken
-# change never reaches this PC. (If GitHub can't be reached, e.g. offline, start what's here.)
+# The access token (read-only, Sparks repo only). Asked for once.
+if (-not (Test-Path $TokenFile)) {
+  Write-Host "`nSparks has moved to a private GitHub repository, so this PC needs a read-only access key (one time)." -ForegroundColor Yellow
+  Write-Host "A GitHub page will open. Sign in as los1818, then:"
+  Write-Host "  1. Token name: Sparks PC.  Expiration: 1 year (or No expiration)."
+  Write-Host "  2. Repository access: Only select repositories -> Sparks."
+  Write-Host "  3. Permissions -> Repository: Contents = Read-only, Actions = Read-only."
+  Write-Host "  4. Click Generate token, copy it, then click back into this window."
+  Start-Process "https://github.com/settings/personal-access-tokens/new"
+  $pasted = (Read-Host "Paste the token here and press Enter").Trim()
+  if ($pasted -notmatch '^(github_pat_|ghp_)[A-Za-z0-9_]+$') { throw "That doesn't look like a GitHub token (it starts with github_pat_). Start Sparks again to retry." }
+  ConvertTo-SecureString $pasted -AsPlainText -Force | ConvertFrom-SecureString | Set-Content $TokenFile
+}
+try {
+  $secure = Get-Content $TokenFile -Raw | ConvertTo-SecureString
+  $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure))
+} catch {
+  Remove-Item $TokenFile -Force -ErrorAction SilentlyContinue
+  throw "The saved GitHub access key couldn't be read (saved by another Windows user?). Start Sparks again to enter it."
+}
+$headers = @{ "User-Agent" = "sparks-updater"; "Accept" = "application/vnd.github+json"; "Authorization" = "Bearer $token" }
+
+# Which version to run: the newest commit on main whose tests passed, so a broken change never
+# reaches this PC; never one older than what's installed. (Offline: start what's here.)
 $latest = $null
 $installed = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw).Trim() } else { "" }
 try {
-  $headers = @{ "User-Agent" = "sparks-updater"; "Accept" = "application/vnd.github+json" }
-  $recent = Invoke-RestMethod "https://api.github.com/repos/$Repo/commits?sha=$([uri]::EscapeDataString($Branch))&per_page=10" -Headers $headers -TimeoutSec 15
-  foreach ($commit in $recent) {
-    # Reached the installed version before finding a newer tested one: stay put (never go backwards).
-    if ($commit.sha -eq $installed) { $latest = $installed; break }
-    $runs = (Invoke-RestMethod "https://api.github.com/repos/$Repo/commits/$($commit.sha)/check-runs?check_name=sparks-checks" -Headers $headers -TimeoutSec 15).check_runs
-    if ($runs | Where-Object { $_.conclusion -eq "success" }) { $latest = $commit.sha; break }
-  }
-  if ($latest -and $latest -ne $recent[0].sha) {
-    Write-Host "The newest change is still being tested (or failed its tests), so it isn't installed yet." -ForegroundColor DarkYellow
+  $runs = (Invoke-RestMethod "https://api.github.com/repos/$Repo/actions/workflows/ci.yml/runs?branch=$Branch&event=push&status=success&per_page=1" -Headers $headers -TimeoutSec 15).workflow_runs
+  if ($runs) { $latest = @($runs)[0].head_sha }
+  if ($latest -and $installed -and $latest -ne $installed) {
+    # Installed version from this repo and newer than the latest tested one? Stay put.
+    try {
+      $cmp = Invoke-RestMethod "https://api.github.com/repos/$Repo/compare/$latest...$installed" -Headers $headers -TimeoutSec 15
+      if ($cmp.status -eq "ahead") { $latest = $installed }
+    } catch {
+      # 404: the installed version isn't from this repo (e.g. the old one), so update. Anything else
+      # (timeout, rate limit): don't risk going backwards; keep what's installed this time.
+      if ($_.Exception.Response.StatusCode.value__ -ne 404) { $latest = $installed }
+    }
   }
   if (-not $latest) { Write-Host "No tested version found on GitHub yet. Starting the version on this PC." -ForegroundColor DarkYellow }
 } catch {
-  Write-Host "Couldn't check for updates right now ($($_.Exception.Message)). Starting the version on this PC." -ForegroundColor DarkYellow
+  $code = $_.Exception.Response.StatusCode.value__
+  if ($code -eq 401) {
+    Remove-Item $TokenFile -Force -ErrorAction SilentlyContinue
+    Write-Host "GitHub didn't accept the access key (it may have expired). Start Sparks again to enter a new one." -ForegroundColor DarkYellow
+  } elseif ($code -eq 403 -or $code -eq 404) {
+    Write-Host "GitHub refused the update check ($code). Check the access key covers the Sparks repo with Contents and Actions read-only. Starting the version on this PC." -ForegroundColor DarkYellow
+  } else {
+    Write-Host "Couldn't check for updates right now ($($_.Exception.Message)). Starting the version on this PC." -ForegroundColor DarkYellow
+  }
 }
 $current = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw).Trim() } else { "" }
 $needsUpdate = -not (Test-Path $App) -or ($latest -and $latest -ne $current)
-if (-not (Test-Path $App) -and -not $latest) {
-  # First install with no tested version available: take the newest one.
-  Write-Host "No tested version yet; installing the newest one." -ForegroundColor DarkYellow
-  try { $latest = (Invoke-RestMethod "https://api.github.com/repos/$Repo/commits/$([uri]::EscapeDataString($Branch))" -Headers @{ "User-Agent" = "sparks-updater" } -TimeoutSec 15).sha }
-  catch { throw "Sparks isn't installed yet and GitHub can't be reached. Check the internet connection and try again." }
-}
+if (-not (Test-Path $App) -and -not $latest) { throw "Sparks isn't installed yet and no tested version could be downloaded. Check the internet connection and try again." }
 
 # Tidy up old versions left by earlier updates, but never one still holding settings or photos.
 Get-ChildItem $Root -Directory -Filter "app-old-*" -ErrorAction SilentlyContinue |
@@ -67,11 +95,11 @@ if ($needsUpdate) {
   $dl = Join-Path $Root "download"
   Remove-Item $dl -Recurse -Force -ErrorAction SilentlyContinue
   New-Item -ItemType Directory -Force $dl | Out-Null
-  $ref = if ($latest) { $latest } else { $Branch }
-  Invoke-WebRequest "https://github.com/$Repo/archive/$ref.zip" -OutFile (Join-Path $dl "sparks.zip") -UseBasicParsing
+  Invoke-WebRequest "https://api.github.com/repos/$Repo/zipball/$latest" -Headers $headers -OutFile (Join-Path $dl "sparks.zip") -UseBasicParsing
   Expand-Archive (Join-Path $dl "sparks.zip") $dl -Force
-  $fresh = Get-ChildItem $dl -Directory | ForEach-Object { Join-Path $_.FullName "sparks" } | Where-Object { Test-Path $_ } | Select-Object -First 1
-  if (-not $fresh) { throw "The download didn't contain the sparks folder." }
+  # The zip holds one folder (los1818-Sparks-<commit>) with the app at its top.
+  $fresh = Get-ChildItem $dl -Directory | Where-Object { Test-Path (Join-Path $_.FullName "package.json") } | Select-Object -ExpandProperty FullName -First 1
+  if (-not $fresh) { throw "The download didn't contain Sparks." }
 
   if (-not (Test-Path $App)) {
     Say "Installing to C:\Sparks\app"
