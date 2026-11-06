@@ -1374,14 +1374,6 @@ body {
   background: var(--yellow);
 }
 
-.eeo-note {
-  margin-top: 28px;
-  font-size: 0.86rem;
-  line-height: 1.6;
-  color: rgba(0,0,0,0.6);
-  max-width: 460px;
-}
-
 .form-helper {
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -1412,9 +1404,6 @@ body {
   #apply .contact-inner {
     grid-template-columns: 1fr;
     gap: 40px;
-  }
-  .eeo-note {
-    max-width: none;
   }
   .perk-card {
     flex-basis: calc(50% - 12px);
