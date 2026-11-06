@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=5" />
   <!-- EmailJS — sends form submissions directly to your inbox, no server needed -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <!-- Favicon placeholder — drop a favicon.ico in this folder -->
@@ -65,6 +65,10 @@
           Can Count On<br/>
           <span style="font-size:0.55em; font-weight:600; letter-spacing:0.04em; opacity:0.85;">For Over 50 Years</span>
         </h1>
+        <p class="hero-slogan" style="color:#F5C118;font-weight:900">
+          <svg class="hero-slogan-bolt" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Let's get you <span class="flicker">wired</span>
+        </p>
         <p class="hero-subtitle">
           From panel upgrades to full commercial buildouts, Star Electric delivers safe, reliable, code-compliant electrical work throughout Regina and surrounding areas.
         </p>
@@ -141,27 +145,46 @@
     <div class="services-grid">
 
       <div class="service-card">
-        <div class="service-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+        <div class="service-media service-media--framed" style="border:4px solid #F5C118;background:#ffffff;padding:12px 16px;box-sizing:border-box">
+          <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Commercial Electrical">
+            <circle cx="170" cy="150" r="96" fill="#F5C118"/>
+            <g transform="translate(114.8,94.8) scale(4.6)" fill="#111111"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></g>
+            <rect x="300" y="72" width="4" height="156" rx="2" fill="#e2e2e2"/>
+            <text x="330" y="168" font-family="Inter, Arial, sans-serif" font-size="74" font-weight="900" fill="#111111">ELECTRICAL</text>
+            <text x="332" y="212" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="600" letter-spacing="2" fill="#555555">LICENSED · INSURED · CODE-COMPLIANT</text>
+          </svg>
         </div>
         <h3>Commercial Electrical</h3>
         <p>Full-service electrical for Commercial Construction, Retail Spaces, Reno's and new construction builds across Saskatchewan.</p>
       </div>
 
       <div class="service-card">
-        <div class="service-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0-5a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0V3a1 1 0 0 1 1-1zm0 18a1 1 0 0 1-1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1-1 1zm8.66-13.5-.87.5a1 1 0 1 1-1-1.73l.87-.5a1 1 0 1 1 1 1.73zM4.21 17.5l.87-.5a1 1 0 1 1 1 1.73l-.87.5a1 1 0 1 1-1-1.73zM21 12a1 1 0 0 1-1 1h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 1 1zM4 12a1 1 0 0 1-1 1H2a1 1 0 0 1 0-2h1a1 1 0 0 1 1 1zm15.66 4.5a1 1 0 0 1-1.37.36l-.87-.5a1 1 0 1 1 1-1.73l.87.5a1 1 0 0 1 .37 1.37zM5.21 7.14l-.87-.5a1 1 0 1 1 1-1.73l.87.5a1 1 0 1 1-1 1.73z"/></svg>
+        <div class="service-media service-media--framed" style="border:4px solid #F5C118;background:#ffffff;padding:12px 16px;box-sizing:border-box">
+          <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Commercial Security">
+            <circle cx="170" cy="150" r="96" fill="#F5C118"/>
+            <g transform="translate(114.8,94.8) scale(4.6)" fill="#111111"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></g>
+            <rect x="300" y="72" width="4" height="156" rx="2" fill="#e2e2e2"/>
+            <text x="330" y="168" font-family="Inter, Arial, sans-serif" font-size="74" font-weight="900" fill="#111111">SECURITY</text>
+            <text x="332" y="212" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="600" letter-spacing="2" fill="#555555">CAMERAS · ACCESS · ALARMS</text>
+          </svg>
         </div>
-        <h3>Lighting Installation</h3>
-        <p>Interior, exterior, and commercial lighting — including LED retrofits and smart lighting systems.</p>
+        <h3>Commercial Security</h3>
+        <p>Surveillance cameras, access control, and alarm systems — protecting your commercial property across Saskatchewan.</p>
       </div>
 
       <div class="service-card">
-        <div class="service-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <!-- Gemstone Lights Verified Dealer Badge Start -->
+        <div class="service-media service-media--framed" style="border:4px solid #F5C118;background:#ffffff;padding:12px 16px;box-sizing:border-box">
+          <div id="GemstoneDealerBadge" data-dealer-id="287512">
+            <a href="https://www.gemstonelights.com/ref/star-electric/" target="_blank" title="Verify us on Gemstone Lights official website">
+              <img decoding="async" src="https://verify.gemstonelights.com/images/authorized.webp" width="362" loading="lazy" alt="Verified Dealer Badge" />
+            </a>
+          </div>
         </div>
-        <h3>Gemstone Installations</h3>
-        <p>Permanent architectural lighting with millions of colour combinations — transform your commercial space or building year-round.</p>
+        <script src="https://verify.gemstonelights.com/badge.min.js" defer></script>
+        <!-- Gemstone Lights Verified Dealer Badge End -->
+        <h3>Gemstone Lights</h3>
+        <p>Permanent architectural lighting with millions of colour combinations — transform your home, commercial space, or building year-round.</p>
       </div>
 
     </div>
@@ -272,12 +295,6 @@
         <p>
           Based in Regina, we understand the unique needs and requirements of Saskatchewan commercial properties — and we're committed to helping our community power their businesses safely.
         </p>
-        <div class="about-actions">
-          <a href="#contact" class="btn btn-dark">
-            Contact Us Today
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          </a>
-        </div>
       </div>
 
     </div>
@@ -343,7 +360,7 @@
             <select id="service" name="service">
               <option value="">— Select a service —</option>
               <option>Commercial Electrical</option>
-              <option>Gemstone Lighting</option>
+              <option>Gemstone Lights</option>
               <option>Other</option>
             </select>
           </div>
@@ -378,7 +395,7 @@
         <h4>Services</h4>
         <ul>
           <li><a href="#services">Commercial Electrical</a></li>
-          <li><a href="#services">Lighting Installation</a></li>
+          <li><a href="#services">Commercial Security</a></li>
           <li><a href="#services">Gemstone Installations</a></li>
         </ul>
       </div>
