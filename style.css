@@ -1439,3 +1439,40 @@ body {
     flex-basis: 100%;
   }
 }
+
+/* -- Resume upload (careers form) -- */
+.form-group input[type="file"] {
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.form-group input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--black);
+  color: var(--yellow);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.form-group input[type="file"]::file-selector-button:hover {
+  background: var(--gray-mid);
+}
+
+.file-hint {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.file-error {
+  color: #c0392b;
+  font-weight: 600;
+}

@@ -260,7 +260,7 @@
       <div class="step-card">
         <div class="step-num">2</div>
         <h3>We Call You Back</h3>
-        <p>Within two business days. Every applicant hears from us one way or the other &mdash; you will not be left wondering.</p>
+        <p>Every applicant hears from us one way or the other &mdash; you will not be left wondering.</p>
       </div>
       <div class="step-card">
         <div class="step-num">3</div>
@@ -311,13 +311,16 @@
         <div id="formSuccess" class="form-success" style="display:none;">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F5C118" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
           <h4>Application Received!</h4>
-          <p>Thanks &mdash; we&rsquo;ll be in touch within two business days.</p>
+          <p>Thanks &mdash; we&rsquo;ll be in touch.</p>
           <p class="success-sub">
-            Got a resume? Email it to <a href="mailto:admin@starelectric.ca?subject=Resume">admin@starelectric.ca</a> and we&rsquo;ll add it to your file. Not required.
+            Anything change before we call? Reach us at <a href="tel:3065840550">(306) 584-0550</a>.
+          </p>
+          <p class="success-sub file-error" id="resumeWarning" style="display:none;">
+            Your resume did not go through &mdash; please email it to <a href="mailto:admin@starelectric.ca?subject=Resume">admin@starelectric.ca</a>. The rest of your application reached us fine.
           </p>
         </div>
 
-        <form id="careersForm" novalidate>
+        <form id="careersForm" method="post" enctype="multipart/form-data" novalidate>
           <div class="form-row">
             <div class="form-group">
               <label for="firstName">First Name *</label>
@@ -367,11 +370,28 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="message">Anything We Should Know?</label>
-            <textarea id="message" name="message" placeholder="Where you've worked, when you can start, who referred you…"></textarea>
+            <label for="notes">Anything We Should Know?</label>
+            <textarea id="notes" name="notes" placeholder="Where you've worked, when you can start, who referred you…"></textarea>
           </div>
+          <div class="form-group">
+            <label for="resume">Attach Your Resume</label>
+            <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx,.rtf,.txt,.jpg,.jpeg,.png" />
+            <p class="file-hint" id="fileHint">Optional &mdash; PDF, Word, or a clear photo. Up to 450 KB.</p>
+          </div>
+
+          <!-- Filled in on submit so the email template receives the same
+               parameter names it already uses for quote requests. -->
+          <input type="hidden" name="from_name" />
+          <input type="hidden" name="customer_email" />
+          <input type="hidden" name="reply_to" />
+          <input type="hidden" name="service" />
+          <input type="hidden" name="message" />
+          <!-- Use {{resume_name}} as the Filename in the template's Attachments
+               tab so the resume keeps the name the applicant gave it. -->
+          <input type="hidden" name="resume_name" />
+
           <p class="form-helper">
-            No resume needed to apply. If you have one, email it to admin@starelectric.ca after you hit send.
+            No resume? Leave it blank &mdash; we&rsquo;d rather talk to you than read a perfect resume.
           </p>
           <p id="formError" class="form-error" style="display:none;">
             Something went wrong &mdash; please call us at (306) 584-0550 or email admin@starelectric.ca.
@@ -438,10 +458,44 @@
 
   const EMAILJS_PUBLIC_KEY  = 'cpz8Y7TlcfZO1n2C3';
   const EMAILJS_SERVICE_ID  = 'service_jidu589';
-  /* Reuses the existing notification template so this works today.
-     Create a dedicated "Careers" template in EmailJS and swap the ID in here when you are ready. */
+
+  /* ★ RESUME ATTACHMENTS — two things must be true in the EmailJS dashboard:
+       1. The account is on a paid plan. Attachments are not available on the
+          free tier, and Personal caps them at 500 KB total per request.
+       2. This template has a Form File attachment whose parameter name is
+          exactly "resume".
+     Use a CAREERS-ONLY template for that. Adding a file attachment to the
+     shared quote template below could affect quote requests, which send no file.
+     Create the careers template, then paste its ID here. */
   const EMAILJS_TEMPLATE_ID = 'template_vbq88gj';
+
+  /* Kept under the 500 KB plan limit, leaving room for the text fields. */
+  const MAX_RESUME_BYTES = 450 * 1024;
+
   emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+  const resumeInput = document.getElementById('resume');
+  const fileHint    = document.getElementById('fileHint');
+  const DEFAULT_HINT = fileHint.innerHTML;
+  const asKb = (bytes) => Math.round(bytes / 1024);
+
+  resumeInput.addEventListener('change', () => {
+    const file = resumeInput.files[0];
+    if (!file) {
+      fileHint.innerHTML = DEFAULT_HINT;
+      fileHint.classList.remove('file-error');
+      return;
+    }
+    if (file.size > MAX_RESUME_BYTES) {
+      resumeInput.value = '';
+      fileHint.textContent = 'That file is ' + asKb(file.size) + ' KB, which is too big to send through this form. '
+        + 'Email it to admin@starelectric.ca instead, or attach a smaller PDF.';
+      fileHint.classList.add('file-error');
+      return;
+    }
+    fileHint.textContent = file.name + ' attached (' + asKb(file.size) + ' KB).';
+    fileHint.classList.remove('file-error');
+  });
 
   document.getElementById('careersForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -452,30 +506,60 @@
     const btnLabel = btn.querySelector('.btn-label');
     const errorEl = document.getElementById('formError');
     if (!form.firstName.value || !form.lastName.value || !form.phone.value) return;
+
     btn.disabled = true;
     iconSend.style.display = 'none';
     iconSpin.style.display = 'inline';
     btnLabel.textContent = 'Sending…';
     errorEl.style.display = 'none';
-    const details =
-      'Position: ' + (form.position.value || 'Not specified') + '\n' +
-      'Level: ' + (form.level.value || 'Not specified') + '\n' +
-      'Drivers licence: ' + (form.licence.value || 'Not specified') + '\n\n' +
-      'Notes: ' + (form.message.value || 'None');
-    const templateParams = {
-      from_name: form.firstName.value + ' ' + form.lastName.value,
-      phone: form.phone.value,
-      customer_email: form.email.value || 'Not provided',
-      reply_to: form.email.value || 'admin@starelectric.ca',
-      service: 'JOB APPLICATION — ' + (form.position.value || 'General'),
-      message: details,
+
+    const resumeName = resumeInput.files.length ? resumeInput.files[0].name : '';
+
+    /* sendForm posts the form itself, which is what carries the file.
+       The hidden fields below give the template the names it expects. */
+    const fillHidden = (resumeNote) => {
+      form.resume_name.value    = resumeName || 'no-resume';
+      form.from_name.value      = form.firstName.value + ' ' + form.lastName.value;
+      form.customer_email.value = form.email.value || 'Not provided';
+      form.reply_to.value       = form.email.value || 'admin@starelectric.ca';
+      form.service.value        = 'JOB APPLICATION — ' + (form.position.value || 'General');
+      form.message.value =
+        'Position: ' + (form.position.value || 'Not specified') + '\n' +
+        'Level: ' + (form.level.value || 'Not specified') + '\n' +
+        'Drivers licence: ' + (form.licence.value || 'Not specified') + '\n' +
+        'Resume: ' + resumeNote + '\n\n' +
+        'Notes: ' + (form.notes.value || 'None');
     };
-    try {
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+
+    const showSuccess = (resumeFailed) => {
       form.style.display = 'none';
       document.getElementById('formSuccess').style.display = 'flex';
+      if (resumeFailed) document.getElementById('resumeWarning').style.display = 'block';
+    };
+
+    fillHidden(resumeName ? 'attached — ' + resumeName : 'none attached');
+
+    try {
+      await emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, form);
+      showSuccess(false);
     } catch (err) {
       console.error('EmailJS error:', err);
+      /* A rejected attachment should not cost us the applicant. Drop the file
+         and send the application text on its own, then say the resume failed. */
+      if (resumeName) {
+        try {
+          /* Disabling drops the field from the payload entirely, rather than
+             posting an empty file the template would still try to attach. */
+          resumeInput.value = '';
+          resumeInput.disabled = true;
+          fillHidden('applicant attached ' + resumeName + ', but it failed to send');
+          await emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, form);
+          showSuccess(true);
+          return;
+        } catch (retryErr) {
+          console.error('EmailJS retry error:', retryErr);
+        }
+      }
       errorEl.style.display = 'block';
       btn.disabled = false;
       iconSend.style.display = 'inline';
