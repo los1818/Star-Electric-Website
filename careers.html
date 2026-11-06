@@ -459,15 +459,14 @@
   const EMAILJS_PUBLIC_KEY  = 'cpz8Y7TlcfZO1n2C3';
   const EMAILJS_SERVICE_ID  = 'service_jidu589';
 
-  /* ★ RESUME ATTACHMENTS — two things must be true in the EmailJS dashboard:
-       1. The account is on a paid plan. Attachments are not available on the
-          free tier, and Personal caps them at 500 KB total per request.
-       2. This template has a Form File attachment whose parameter name is
-          exactly "resume".
-     Use a CAREERS-ONLY template for that. Adding a file attachment to the
-     shared quote template below could affect quote requests, which send no file.
-     Create the careers template, then paste its ID here. */
-  const EMAILJS_TEMPLATE_ID = 'template_vbq88gj';
+  /* Careers-only template, kept separate from the shared quote template.
+     Its Attachments tab has a Form File Attachment with the Form Field Name
+     "resume", which must stay matched to the file input's name below — that
+     pairing is what attaches the resume. Attachments also need a paid EmailJS
+     plan; Personal caps them at 500 KB per request, hence the limit below.
+     In the dashboard, the attachment panel needs Apply AND then Save — saving
+     without Apply discards it and sends will still succeed with no file. */
+  const EMAILJS_TEMPLATE_ID = 'template_v4xted9';
 
   /* Kept under the 500 KB plan limit, leaving room for the text fields. */
   const MAX_RESUME_BYTES = 450 * 1024;
