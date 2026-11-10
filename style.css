@@ -756,11 +756,12 @@ body {
   background: var(--yellow);
 }
 
+/* The quote form that filled the right column was removed, so this is now a
+   single centred column rather than a half-width block against empty space. */
 .contact-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 72px;
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .contact-content .section-label {
@@ -780,8 +781,9 @@ body {
 
 .contact-methods {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
 }
 
 .contact-method {
@@ -798,10 +800,44 @@ body {
   transition: var(--transition);
 }
 
+.contact-method {
+  flex: 1 1 260px;
+  justify-content: center;
+}
+
 .contact-method:hover {
   background: var(--black);
   color: var(--yellow);
-  transform: translateX(4px);
+  transform: translateY(-2px);
+}
+
+/* With no form to submit, the phone number is the primary action and should
+   look like one rather than sit level with the other two. */
+.contact-method.is-primary {
+  background: var(--black);
+  color: var(--yellow);
+  font-size: 1.15rem;
+}
+
+.contact-method.is-primary:hover {
+  background: var(--gray-mid);
+}
+
+/* The service area is information, not an action — it should not be dressed
+   as a button alongside two things you can actually click. */
+.contact-method.is-note {
+  flex-basis: 100%;
+  background: transparent;
+  padding: 2px 0 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: rgba(0,0,0,0.6);
+}
+
+.contact-method.is-note:hover {
+  background: transparent;
+  color: rgba(0,0,0,0.6);
+  transform: none;
 }
 
 .contact-method svg {
