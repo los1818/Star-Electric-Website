@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=9" />
+  <link rel="stylesheet" href="style.css?v=10" />
   <!-- EmailJS — sends form submissions directly to your inbox, no server needed -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <!-- Favicon placeholder — drop a favicon.ico in this folder -->
@@ -363,9 +363,7 @@
               <option>Gemstone Lights</option>
               <option>Other</option>
             </select>
-            <p id="gemstoneNote" class="form-helper" style="display:none;">
-              Gemstone Lights quotes are handled on our Gemstone dealer page — taking you there now…
-            </p>
+            <p id="gemstoneNote" class="form-helper" style="display:none;"></p>
           </div>
           <div class="form-group">
             <label for="message">Tell Us About Your Project</label>
@@ -427,28 +425,29 @@
   navLinks.querySelectorAll('a').forEach(a => { a.addEventListener('click', () => navLinks.classList.remove('open')); });
 
   /* Gemstone quotes are handled on the dealer referral page, so picking that
-     option hands the visitor straight over instead of taking a lead we would
-     only forward on. The referral path keeps the lead credited to us. */
+     option hands the visitor over instead of taking a lead we would only
+     forward on. The referral path keeps the lead credited to us. */
   const GEMSTONE_LEAD_URL = 'https://www.gemstonelights.com/ref/star-electric';
   const serviceSelect = document.getElementById('service');
   const gemstoneNote  = document.getElementById('gemstoneNote');
-  let gemstoneTimer;
 
   serviceSelect.addEventListener('change', () => {
-    clearTimeout(gemstoneTimer);
     if (serviceSelect.value !== 'Gemstone Lights') {
       gemstoneNote.style.display = 'none';
       return;
     }
+    /* Opened straight from the change event, with no delay, because a browser
+       only allows a new tab while it still counts as a user action — a
+       setTimeout around this gets caught by the popup blocker. */
+    const opened = window.open(GEMSTONE_LEAD_URL, '_blank', 'noopener');
+    /* The link is always shown, not just when the popup is blocked: some
+       browsers and in-app webviews refuse window.open outright, and the
+       visitor should never be left with nowhere to go. */
+    gemstoneNote.innerHTML =
+      (opened ? 'We&rsquo;ve opened our Gemstone dealer page in a new tab. ' : '')
+      + 'Gemstone Lights quotes are handled '
+      + '<a href="' + GEMSTONE_LEAD_URL + '" target="_blank" rel="noopener noreferrer">on that page</a>.';
     gemstoneNote.style.display = 'block';
-    /* Short delay, then re-check: arrowing through a select fires change on
-       every option in most browsers, and passing over Gemstone on the way to
-       Other should not hijack the page. */
-    gemstoneTimer = setTimeout(() => {
-      if (serviceSelect.value === 'Gemstone Lights') {
-        window.location.href = GEMSTONE_LEAD_URL;
-      }
-    }, 600);
   });
 
   const EMAILJS_PUBLIC_KEY  = 'cpz8Y7TlcfZO1n2C3';
