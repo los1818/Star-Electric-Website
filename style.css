@@ -485,6 +485,29 @@ body {
   position: relative;
   overflow: hidden;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Only the Gemstone card carries a call to action, so pin it to the bottom —
+   otherwise it floats wherever that card's copy happens to end. */
+.service-cta {
+  margin-top: auto;
+  align-self: center;
+  font-size: 0.9rem;
+  padding: 11px 22px;
+  position: relative;
+  z-index: 1;
+}
+
+/* margin-top:auto gives no gap when this card is the tallest, so the copy
+   above it carries the spacing. */
+.service-card p:has(+ .service-cta) {
+  margin-bottom: 22px;
+}
+
+.service-cta svg {
+  opacity: 0.75;
 }
 
 .service-card::after {
