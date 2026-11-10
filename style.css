@@ -498,6 +498,9 @@ body {
   padding: 11px 22px;
   position: relative;
   z-index: 1;
+  /* .btn is nowrap, which clips this label inside the card on narrow phones. */
+  max-width: 100%;
+  white-space: normal;
 }
 
 /* margin-top:auto gives no gap when this card is the tallest, so the copy
