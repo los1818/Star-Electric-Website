@@ -442,27 +442,43 @@
     iconSpin.style.display = 'inline';
     btnLabel.textContent = 'Sending…';
     errorEl.style.display = 'none';
+    const customerEmail = form.email.value.trim();
     const templateParams = {
       from_name: `${form.firstName.value} ${form.lastName.value}`,
       phone: form.phone.value,
-      customer_email: form.email.value || 'Not provided',
-      reply_to: form.email.value || 'admin@starelectric.ca',
+      customer_email: customerEmail || 'Not provided',
+      reply_to: customerEmail || 'admin@starelectric.ca',
       service: form.service.value || 'Not specified',
       message: form.message.value || 'No message',
     };
+
+    /* The lead itself. Only this one decides whether the customer sees an error. */
     try {
       await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
-      await emailjs.send(EMAILJS_SERVICE_ID, 'template_muvw0dp', templateParams);
-      form.style.display = 'none';
-      document.getElementById('formSuccess').style.display = 'flex';
     } catch (err) {
-      console.error('EmailJS error:', err);
+      console.error('EmailJS error (lead):', err);
       errorEl.style.display = 'block';
       btn.disabled = false;
       iconSend.style.display = 'inline';
       iconSpin.style.display = 'none';
       btnLabel.textContent = 'Send My Request';
+      return;
     }
+
+    /* The customer auto-reply is a nicety, and the email field is optional.
+       Skip it when there is no address — the template sends to customer_email,
+       and "Not provided" is rejected as a corrupted recipient (422). Never let
+       this failure show an error on a lead that already reached us. */
+    if (customerEmail) {
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, 'template_muvw0dp', templateParams);
+      } catch (err) {
+        console.error('EmailJS error (auto-reply, lead was still sent):', err);
+      }
+    }
+
+    form.style.display = 'none';
+    document.getElementById('formSuccess').style.display = 'flex';
   });
 </script>
 </body>
