@@ -1433,11 +1433,6 @@ body {
   margin-bottom: 18px;
 }
 
-.form-helper a {
-  color: var(--yellow-dark);
-  font-weight: 700;
-}
-
 .success-sub {
   font-size: 0.88rem;
   color: var(--text-muted);
