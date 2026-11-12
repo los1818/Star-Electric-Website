@@ -491,21 +491,45 @@ body {
 
 /* Only the Gemstone card carries a call to action, so pin it to the bottom —
    otherwise it floats wherever that card's copy happens to end. */
-.service-cta {
+.service-ctas {
   margin-top: auto;
-  align-self: center;
-  font-size: 0.9rem;
-  padding: 11px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   position: relative;
   z-index: 1;
-  /* .btn is nowrap, which clips this label inside the card on narrow phones. */
+}
+
+/* Stretched rather than centred so the two buttons match width and height —
+   centred, the longer label wrapped to two lines while the other stayed on
+   one, and the pair read as accidental. */
+.service-cta {
+  align-self: stretch;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 11px 18px;
+  /* .btn is nowrap, which clips these labels inside the card on narrow phones. */
   max-width: 100%;
   white-space: normal;
 }
 
+/* Secondary action on a white card — .btn-outline is built for the dark hero. */
+.service-cta--alt {
+  background: transparent;
+  color: var(--black);
+  border-color: rgba(0,0,0,0.25);
+}
+
+.service-cta--alt:hover {
+  background: var(--black);
+  border-color: var(--black);
+  color: var(--yellow);
+}
+
 /* margin-top:auto gives no gap when this card is the tallest, so the copy
    above it carries the spacing. */
-.service-card p:has(+ .service-cta) {
+.service-card p:has(+ .service-ctas) {
   margin-bottom: 22px;
 }
 

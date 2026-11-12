@@ -7,8 +7,9 @@
   <meta name="description" content="Star Electric is Regina's trusted commercial electrical contractor. Licensed electricians serving businesses across Saskatchewan — commercial construction, lighting, and Gemstone installations." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gemstonelights.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=10" />
+  <link rel="stylesheet" href="style.css?v=12" />
   <!-- EmailJS — sends form submissions directly to your inbox, no server needed -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <!-- Favicon placeholder — drop a favicon.ico in this folder -->
@@ -180,10 +181,22 @@
         <!-- Gemstone Lights Verified Dealer Badge End -->
         <h3>Gemstone Lights</h3>
         <p>Permanent architectural lighting with millions of colour combinations — transform your home, commercial space, or building year-round.</p>
-        <a href="https://www.gemstonelights.com/ref/star-electric/" target="_blank" rel="noopener noreferrer" class="btn btn-dark service-cta">
-          Get a Free Gemstone Quote
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7zM5 5h5V3H3v18h18v-7h-2v5H5V5z"/></svg>
-        </a>
+        <div class="service-ctas">
+          <a href="https://www.gemstonelights.com/ref/star-electric/" target="_blank" rel="noopener noreferrer" class="btn btn-dark service-cta">
+            Get a Free Gemstone Quote
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7zM5 5h5V3H3v18h18v-7h-2v5H5V5z"/></svg>
+          </a>
+          <!-- Opens the Gemstone AI visualizer in an overlay: the loader binds
+               [data-gvz-open] and calls preventDefault on the click. The href is
+               a real destination on purpose — if the loader is blocked or fails
+               to load, this stays a working link to the dealer page instead of
+               a button that does nothing. The loader hides it outright when the
+               visualizer is switched off or over its limit. -->
+          <a href="https://www.gemstonelights.com/ref/star-electric/" target="_blank" rel="noopener noreferrer" data-gvz-open class="btn service-cta service-cta--alt">
+            See Your Home Lit Up
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+          </a>
+        </div>
       </div>
 
     </div>
@@ -417,6 +430,11 @@
     </div>
   </div>
 </footer>
+
+<!-- Gemstone AI visualizer loader. Kept out of the service card: it only ever
+     appends its own UI to <body>, and a <script> inside the card counts as a
+     sibling for CSS selectors there. Only runs on starelectric.ca. -->
+<script async src="https://www.gemstonelights.com/vz/l/O0zWzNtbPnORk32Z"></script>
 
 <script>
   const hamburger = document.getElementById('hamburger');
