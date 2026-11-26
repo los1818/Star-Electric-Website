@@ -738,7 +738,8 @@ body {
 
 .why-item-body p {
   font-size: 0.88rem;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.68);
+  line-height: 1.65;
 }
 
 .why-stats {
@@ -794,8 +795,9 @@ body {
 
 .stat-label {
   font-size: 0.85rem;
-  color: rgba(255,255,255,0.5);
-  font-weight: 500;
+  color: rgba(255,255,255,0.65);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .stat-box:hover {
@@ -1179,6 +1181,14 @@ body {
 }
 
 @media (max-width: 600px) {
+  #hero,
+  #services,
+  #why,
+  #about,
+  #contact {
+    padding: 64px 0;
+  }
+
   .hero-actions {
     flex-direction: column;
   }
