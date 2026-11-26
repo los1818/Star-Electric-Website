@@ -69,8 +69,12 @@ body {
   cursor: pointer;
   text-decoration: none;
   border: 2px solid transparent;
-  transition: var(--transition);
+  transition: background var(--transition), border-color var(--transition), color var(--transition), transform 0.15s ease, box-shadow 0.15s ease;
   white-space: nowrap;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
 }
 
 .btn-primary {
@@ -1050,6 +1054,7 @@ body {
   background: #0a0a0a;
   color: rgba(255,255,255,0.55);
   padding: 48px 0 28px;
+  border-top: 3px solid var(--yellow);
 }
 
 .footer-inner {
