@@ -9,6 +9,22 @@
   padding: 0;
 }
 
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 16px;
+  z-index: 9999;
+  background: #F5C118;
+  color: #111111;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 16px;
+}
+
 :root {
   --yellow: #F5C118;
   --yellow-dark: #D4A812;
@@ -470,7 +486,7 @@ body {
 
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 24px;
 }
 
@@ -816,7 +832,7 @@ body {
 }
 
 .contact-content .section-label {
-  color: rgba(0,0,0,0.5);
+  color: rgba(0,0,0,0.75);
 }
 
 .contact-content .section-title {
@@ -1102,10 +1118,6 @@ body {
     border-top: 1px solid rgba(255,255,255,0.1);
     padding-top: 20px;
     width: 100%;
-  }
-
-  #header {
-    position: relative;
   }
 
   .why-stats {
